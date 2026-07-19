@@ -1,0 +1,22 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": ["gui", "ground", "fixed", "on_shelf"],
+        "model": {
+          "type": "minecraft:model",
+          "model": "raccoons:item/raccoon_spawn_egg"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:special",
+      "base": "raccoons:item/raccoon_spawn_egg",
+      "model": {
+        "type": "geckolib:geckolib"
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.raccoon_bell_item",
+				"texture_width": 32,
+				"texture_height": 32,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 2.5,
+				"visible_bounds_offset": [0, 0.75, 0]
+			},
+			"bones": [
+				{
+					"name": "bone",
+					"pivot": [-0.11599, 4.3261, 0]
+				},
+				{
+					"name": "body",
+					"parent": "bone",
+					"pivot": [0, 3.5, 0],
+					"rotation": [180, 0, 0],
+					"cubes": [
+						{"origin": [-3, 2.5, -3], "size": [6, 7, 6], "uv": [0, 0]}
+					]
+				},
+				{
+					"name": "base",
+					"parent": "bone",
+					"pivot": [-8, -8.5, 8],
+					"rotation": [180, 0, 0],
+					"cubes": [
+						{"origin": [-4, -14.5, 12], "size": [8, 2, 8], "uv": [0, 13]}
+					]
+				}
+			]
+		}
+	]
+}

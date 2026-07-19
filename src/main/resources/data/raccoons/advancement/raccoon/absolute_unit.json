@@ -1,0 +1,17 @@
+{
+	"parent": "raccoons:raccoon/tady_mas_svacinu",
+	"criteria": {
+		"became_chunky": {
+			"trigger": "raccoons:became_chunky"
+		}
+	},
+	"display": {
+		"icon": { "id": "minecraft:hay_block" },
+		"title": { "translate": "advancements.raccoons.absolute_unit.title" },
+		"description": { "translate": "advancements.raccoons.absolute_unit.description" },
+		"frame": "goal",
+		"show_toast": true,
+		"announce_to_chat": true
+	},
+	"requirements": [["became_chunky"]]
+}

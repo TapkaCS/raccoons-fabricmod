@@ -1,0 +1,26 @@
+{
+	"parent": "minecraft:husbandry/root",
+	"criteria": {
+		"tamed_raccoon": {
+			"trigger": "minecraft:tame_animal",
+			"conditions": {
+				"entity": [
+					{
+						"condition": "minecraft:entity_properties",
+						"entity": "this",
+						"predicate": { "type": "raccoons:raccoon" }
+					}
+				]
+			}
+		}
+	},
+	"display": {
+		"icon": { "id": "minecraft:apple" },
+		"title": { "translate": "advancements.raccoons.tady_mas_svacinu.title" },
+		"description": { "translate": "advancements.raccoons.tady_mas_svacinu.description" },
+		"frame": "task",
+		"show_toast": true,
+		"announce_to_chat": true
+	},
+	"requirements": [["tamed_raccoon"]]
+}

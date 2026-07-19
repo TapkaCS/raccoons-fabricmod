@@ -1,0 +1,26 @@
+{
+	"parent": "raccoons:raccoon/tady_mas_svacinu",
+	"criteria": {
+		"bred_raccoon": {
+			"trigger": "minecraft:bred_animals",
+			"conditions": {
+				"child": [
+					{
+						"condition": "minecraft:entity_properties",
+						"entity": "this",
+						"predicate": { "type": "raccoons:raccoon" }
+					}
+				]
+			}
+		}
+	},
+	"display": {
+		"icon": { "id": "minecraft:egg" },
+		"title": { "translate": "advancements.raccoons.myvali_romantika.title" },
+		"description": { "translate": "advancements.raccoons.myvali_romantika.description" },
+		"frame": "task",
+		"show_toast": true,
+		"announce_to_chat": true
+	},
+	"requirements": [["bred_raccoon"]]
+}

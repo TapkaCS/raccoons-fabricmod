@@ -1,0 +1,17 @@
+{
+	"parent": "raccoons:raccoon/tady_mas_svacinu",
+	"criteria": {
+		"stole_golden_apple": {
+			"trigger": "raccoons:stole_golden_apple"
+		}
+	},
+	"display": {
+		"icon": { "id": "minecraft:enchanted_golden_apple" },
+		"title": { "translate": "advancements.raccoons.bozska_svacinka.title" },
+		"description": { "translate": "advancements.raccoons.bozska_svacinka.description" },
+		"frame": "challenge",
+		"show_toast": true,
+		"announce_to_chat": true
+	},
+	"requirements": [["stole_golden_apple"]]
+}

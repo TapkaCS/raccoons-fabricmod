@@ -1,0 +1,17 @@
+{
+	"parent": "raccoons:raccoon/tady_mas_svacinu",
+	"criteria": {
+		"tamed_enough": {
+			"trigger": "raccoons:tamed_enough_raccoons"
+		}
+	},
+	"display": {
+		"icon": { "id": "raccoons:raccoon_spawn_egg" },
+		"title": { "translate": "advancements.raccoons.popelnicovy_magnat.title" },
+		"description": { "translate": "advancements.raccoons.popelnicovy_magnat.description" },
+		"frame": "challenge",
+		"show_toast": true,
+		"announce_to_chat": true
+	},
+	"requirements": [["tamed_enough"]]
+}
