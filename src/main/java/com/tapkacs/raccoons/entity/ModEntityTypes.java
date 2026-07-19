@@ -16,6 +16,7 @@ import net.minecraft.world.entity.SpawnPlacementType;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 
@@ -56,8 +57,15 @@ public class ModEntityTypes {
             throw new RuntimeException("Failed to register raccoon spawn placement", e);
         }
 
+        // Any forest/taiga - their main habitat, spawning in gangs of 3-5.
         BiomeModifications.addSpawn(
                 BiomeSelectors.tag(BiomeTags.IS_FOREST).or(BiomeSelectors.tag(BiomeTags.IS_TAIGA)),
-                MobCategory.CREATURE, RACCOON, 20, 2, 4);
+                MobCategory.CREATURE, RACCOON, 20, 3, 5);
+
+        // Also the common village biomes (lower weight - they're visitors there, not native), so
+        // gangs reliably show up near villages to raid chests at night.
+        BiomeModifications.addSpawn(
+                BiomeSelectors.includeByKey(Biomes.PLAINS, Biomes.SNOWY_PLAINS, Biomes.DESERT, Biomes.SAVANNA),
+                MobCategory.CREATURE, RACCOON, 8, 3, 5);
     }
 }

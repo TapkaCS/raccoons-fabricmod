@@ -127,7 +127,7 @@ public class RaccoonBellItem extends Item implements GeoItem {
             @Override
             public GeoItemRenderer<?> getGeoItemRenderer() {
                 if (this.renderer == null) {
-                    this.renderer = new GeoItemRenderer<>(new RaccoonBellItemGeoModel()).withScale(0.35f);
+                    this.renderer = new GeoItemRenderer<>(new RaccoonBellItemGeoModel()).withScale(1.1f);
                 }
                 return this.renderer;
             }

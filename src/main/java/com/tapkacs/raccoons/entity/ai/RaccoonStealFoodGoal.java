@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.phys.AABB;
 
 import java.util.EnumSet;
 
@@ -24,6 +25,11 @@ import java.util.EnumSet;
  * water within range to "wash" it, then eats it. Purely a flavor goal - stolen food is just
  * removed from the chest and deleted after the wash/eat timers run out. Applies to tamed and
  * untamed raccoons alike.
+ *
+ * <p>At night, wild raccoons that have at least one other wild raccoon nearby (a "gang") roll
+ * this check far more often, so groups that spawned together tend to converge on the same
+ * chests around the same time - reads as a coordinated nighttime raid without needing any
+ * actual inter-raccoon coordination logic.
  */
 public class RaccoonStealFoodGoal extends Goal {
 
@@ -31,6 +37,10 @@ public class RaccoonStealFoodGoal extends Goal {
 
     private static final int CHEST_SEARCH_RADIUS = 12;
     private static final int WATER_SEARCH_RADIUS = 7;
+    private static final int NORMAL_CHANCE = 400;
+    private static final int NIGHT_GANG_CHANCE = 30;
+    private static final double GANG_CHECK_RADIUS = 16.0;
+    private static final int GANG_MIN_OTHERS = 1;
 
     private final RaccoonEntity raccoon;
     private BlockPos chestPos;
@@ -49,10 +59,22 @@ public class RaccoonStealFoodGoal extends Goal {
         if (this.raccoon.level().isClientSide()) {
             return false;
         }
-        if (this.raccoon.getRandom().nextInt(400) != 0) {
+        int chance = this.isNightGangRaid() ? NIGHT_GANG_CHANCE : NORMAL_CHANCE;
+        if (this.raccoon.getRandom().nextInt(chance) != 0) {
             return false;
         }
         return this.findChestWithFood() != null;
+    }
+
+    /** Wild, and at night, and not alone - i.e. part of a raiding gang rather than a lone raccoon passing through. */
+    private boolean isNightGangRaid() {
+        if (this.raccoon.isTame() || !this.raccoon.level().isDarkOutside()) {
+            return false;
+        }
+        AABB area = this.raccoon.getBoundingBox().inflate(GANG_CHECK_RADIUS);
+        long nearbyWildRaccoons = this.raccoon.level().getEntitiesOfClass(RaccoonEntity.class, area,
+                other -> other != this.raccoon && !other.isTame()).size();
+        return nearbyWildRaccoons >= GANG_MIN_OTHERS;
     }
 
     @Override
