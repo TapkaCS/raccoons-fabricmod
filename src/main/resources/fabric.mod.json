@@ -11,7 +11,7 @@
 		"homepage": "https://github.com/TapkaCS/raccoonmod",
 		"sources": "https://github.com/TapkaCS/raccoonmod"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/raccoons/icon.png",
 	"environment": "*",
 	"entrypoints": {
