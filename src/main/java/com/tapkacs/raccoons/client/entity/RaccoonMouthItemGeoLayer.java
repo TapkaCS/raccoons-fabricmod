@@ -32,8 +32,8 @@ public class RaccoonMouthItemGeoLayer extends BlockAndItemGeoLayer<RaccoonEntity
             return List.of();
         }
 
-        return List.of(RenderData.item(MOUTH_BONE, ItemDisplayContext.GROUND,
-                RenderUtil.createRenderStateForItem(stack, this.itemModelResolver, ItemDisplayContext.GROUND, animatable)));
+        return List.of(RenderData.item(MOUTH_BONE, ItemDisplayContext.FIXED,
+                RenderUtil.createRenderStateForItem(stack, this.itemModelResolver, ItemDisplayContext.FIXED, animatable)));
     }
 
     @Override

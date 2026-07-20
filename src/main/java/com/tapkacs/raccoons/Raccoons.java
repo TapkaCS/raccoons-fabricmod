@@ -3,6 +3,7 @@ package com.tapkacs.raccoons;
 import net.fabricmc.api.ModInitializer;
 
 import com.tapkacs.raccoons.advancement.ModTriggers;
+import com.tapkacs.raccoons.block.ModBlocks;
 import com.tapkacs.raccoons.entity.ModEntityTypes;
 import com.tapkacs.raccoons.item.ModCreativeTabs;
 import com.tapkacs.raccoons.item.ModItems;
@@ -31,6 +32,7 @@ public class Raccoons implements ModInitializer {
 		ModEntityTypes.registerModEntityTypes();
 		ModEntityTypes.registerAttributes();
 		ModEntityTypes.registerSpawns();
+		ModBlocks.registerModBlocks();
 		ModItems.registerModItems();
 		ModCreativeTabs.registerModCreativeTabs();
 		ModSounds.registerModSounds();

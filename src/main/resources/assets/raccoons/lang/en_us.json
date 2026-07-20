@@ -8,6 +8,8 @@
   "item.raccoons.raccoon_bell": "Raccoon Bell",
   "item.raccoons.raccoon_bell.tooltip.flavor": "A sound no raccoon can resist, no matter the distance.",
   "item.raccoons.raccoon_bell.tooltip.hint": "Right-click to call your tamed raccoons.",
+  "block.raccoons.raccoon_stash": "Raccoon Stash",
+  "container.raccoons.raccoon_stash": "Raccoon Stash",
   "entity.raccoons.raccoon": "Raccoon",
   "entity.raccoons.raccoon.mode.follow": "Follow",
   "entity.raccoons.raccoon.mode.wander": "Wander",

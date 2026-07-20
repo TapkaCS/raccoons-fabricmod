@@ -26,6 +26,7 @@ public class ModCreativeTabs {
                     output.accept(ModItems.RACCOON_SPAWN_EGG);
                     output.accept(ModItems.RACCOON_HAT);
                     output.accept(ModItems.RACCOON_BELL);
+                    output.accept(ModItems.RACCOON_STASH);
                 })
                 .build();
 

@@ -59,6 +59,11 @@ public class RaccoonStealFoodGoal extends Goal {
         if (this.raccoon.level().isClientSide()) {
             return false;
         }
+        // Don't steal a second thing (food, or anything RaccoonStashGoal has it carrying) while already holding something -
+        // this goal outranks RaccoonStashGoal and would otherwise interrupt it mid-carry every time the gang-raid roll hits.
+        if (!this.raccoon.getCarriedItem().isEmpty()) {
+            return false;
+        }
         int chance = this.isNightGangRaid() ? NIGHT_GANG_CHANCE : NORMAL_CHANCE;
         if (this.raccoon.getRandom().nextInt(chance) != 0) {
             return false;

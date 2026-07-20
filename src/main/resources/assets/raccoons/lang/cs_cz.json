@@ -8,6 +8,8 @@
   "item.raccoons.raccoon_bell": "Mývalí zvonek",
   "item.raccoons.raccoon_bell.tooltip.flavor": "Zvuk, který mýval pozná i z druhého konce lesa.",
   "item.raccoons.raccoon_bell.tooltip.hint": "Pravým klikem přivoláš své ochočené mývaly.",
+  "block.raccoons.raccoon_stash": "Mývalí skrýš",
+  "container.raccoons.raccoon_stash": "Mývalí skrýš",
   "entity.raccoons.raccoon": "Mýval",
   "entity.raccoons.raccoon.mode.follow": "Následovat",
   "entity.raccoons.raccoon.mode.wander": "Bloumat",
