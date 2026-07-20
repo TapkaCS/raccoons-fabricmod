@@ -11,6 +11,7 @@ import com.tapkacs.raccoons.entity.ai.RaccoonBegGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonClimbGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonFollowOwnerGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonLookAtPlayerGoal;
+import com.tapkacs.raccoons.entity.ai.RaccoonOpenDoorGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonRandomLookAroundGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonStashGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonStealFoodGoal;
@@ -43,7 +44,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.BreedGoal;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
-import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
@@ -96,6 +96,9 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     private static final EntityDataAccessor<Boolean> DATA_WASHING =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
 
+    private static final EntityDataAccessor<Boolean> DATA_DOOR_JUMPING =
+            SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
+
     private static final EntityDataAccessor<Boolean> DATA_CHUNKY =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -145,7 +148,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     /**
      * Lets pathfinding route the raccoon over fences instead of always detouring around them (same
      * flag vanilla foxes/chickens use), and through closed doors - clever paws can open those
-     * (see the {@link OpenDoorGoal} in {@link #registerGoals()}), so raids can path into buildings
+     * (see the {@link RaccoonOpenDoorGoal} in {@link #registerGoals()}), so raids can path into buildings
      * instead of piling up against the outside wall nearest the chest.
      */
     @Override
@@ -172,6 +175,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         builder.define(DATA_BEGGING, false);
         builder.define(DATA_CARRIED_ITEM, ItemStack.EMPTY);
         builder.define(DATA_WASHING, false);
+        builder.define(DATA_DOOR_JUMPING, false);
         builder.define(DATA_CHUNKY, false);
         builder.define(DATA_COLOR_VARIANT, (byte) ColorVariant.NORMAL.ordinal());
         builder.define(DATA_CLIMBING, false);
@@ -293,7 +297,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true));
+        this.goalSelector.addGoal(2, new RaccoonOpenDoorGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2, true));
         this.goalSelector.addGoal(3, new RaccoonStealFoodGoal(this));
         this.goalSelector.addGoal(4, new RaccoonStashGoal(this));
@@ -363,6 +367,15 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
 
     public void setWashing(boolean washing) {
         this.entityData.set(DATA_WASHING, washing);
+    }
+
+    /** Standing-on-hind-legs jump played while working a door open (see {@link com.tapkacs.raccoons.entity.ai.RaccoonOpenDoorGoal}). */
+    public boolean isDoorJumping() {
+        return this.entityData.get(DATA_DOOR_JUMPING);
+    }
+
+    public void setDoorJumping(boolean doorJumping) {
+        this.entityData.set(DATA_DOOR_JUMPING, doorJumping);
     }
 
     /** Purely visual/hitbox-cosmetic "big" variant; picks a different GeckoLib model in {@link com.tapkacs.raccoons.client.entity.RaccoonGeoModel}. */
@@ -585,6 +598,11 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             }
             if (raccoon.isWashing()) {
                 return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Washing"));
+            }
+            if (raccoon.isDoorJumping()) {
+                // Must outrank the isMoving branch - the raccoon is usually mid-path when it stops to work a door.
+                state.setControllerSpeed(1.0f);
+                return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Jumping"));
             }
             if (raccoon.isBegging()) {
                 return state.setAndContinue(RawAnimation.begin().thenLoop("Begging"));
