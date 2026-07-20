@@ -34,8 +34,10 @@ public class RaccoonStashGoal extends Goal {
     private static final int STASH_SEARCH_VERTICAL = 4;
     private static final int LOG_SEARCH_RADIUS = 8;
     private static final int MAX_GOTO_TICKS = 200;
+    // Deliberately NOT the "blocks/raccoon_stash" path - that one is the block's BREAK loot
+    // (an oak log, so the stash block itself stays unobtainable). This table seeds the contents.
     private static final ResourceKey<LootTable> LOOT_TABLE = ResourceKey.create(Registries.LOOT_TABLE,
-            Identifier.fromNamespaceAndPath(Raccoons.MOD_ID, "blocks/raccoon_stash"));
+            Identifier.fromNamespaceAndPath(Raccoons.MOD_ID, "gameplay/raccoon_stash_fill"));
 
     private final RaccoonEntity raccoon;
     private ItemEntity targetItem;
