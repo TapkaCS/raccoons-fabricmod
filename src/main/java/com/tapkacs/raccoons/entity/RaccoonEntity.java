@@ -214,6 +214,15 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     protected void customServerAiStep(ServerLevel level) {
         super.customServerAiStep(level);
 
+        // This hook runs after navigation.tick() but before moveControl/jumpControl tick, so it's
+        // the one spot where a door-jumping raccoon can be fully frozen: clearing the path AND
+        // resetting the move control kills both the forward shove into the closed door and the
+        // obstacle auto-jump it would otherwise trigger (the "raccoon bouncing up the door" report).
+        if (this.isDoorJumping()) {
+            this.getNavigation().stop();
+            this.getMoveControl().setWait();
+        }
+
         if (!this.isTame() || this.getBehaviorMode() != BehaviorMode.SIT) {
             return;
         }
