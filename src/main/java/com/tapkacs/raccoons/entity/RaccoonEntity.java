@@ -239,7 +239,15 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (this.level().isClientSide()) {
             return;
         }
-        boolean onCustomClimbable = this.horizontalCollision && this.isNextToClimbableBlock();
+        // Working a door open means deliberately standing against a block: kill the horizontal push
+        // other goals keep applying (and the climb-assist below), or the raccoon slides up/along the
+        // door frame mid jump-animation instead of hopping in place.
+        if (this.isDoorJumping()) {
+            Vec3 doorDelta = this.getDeltaMovement();
+            this.setDeltaMovement(0, doorDelta.y, 0);
+        }
+        boolean onCustomClimbable = !this.isDoorJumping()
+                && this.horizontalCollision && this.isNextToClimbableBlock();
         this.setClimbing(onCustomClimbable);
         if (onCustomClimbable) {
             Vec3 delta = this.getDeltaMovement();

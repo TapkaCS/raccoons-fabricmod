@@ -27,6 +27,7 @@ public class RaccoonOpenDoorGoal extends OpenDoorGoal {
         this.windup = JUMP_WINDUP_TICKS;
         this.openedDoor = false;
         this.raccoon.setDoorJumping(true);
+        this.raccoon.getNavigation().stop();
     }
 
     @Override
