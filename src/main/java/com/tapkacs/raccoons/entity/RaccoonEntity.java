@@ -43,6 +43,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.BreedGoal;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
@@ -141,11 +142,17 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         super(entityType, level);
     }
 
-    /** Lets pathfinding route the raccoon over fences instead of always detouring around them (same flag vanilla foxes/chickens use). */
+    /**
+     * Lets pathfinding route the raccoon over fences instead of always detouring around them (same
+     * flag vanilla foxes/chickens use), and through closed doors - clever paws can open those
+     * (see the {@link OpenDoorGoal} in {@link #registerGoals()}), so raids can path into buildings
+     * instead of piling up against the outside wall nearest the chest.
+     */
     @Override
     protected PathNavigation createNavigation(Level level) {
         GroundPathNavigation navigation = new GroundPathNavigation(this, level);
         navigation.setCanWalkOverFences(true);
+        navigation.setCanOpenDoors(true);
         return navigation;
     }
 
@@ -286,6 +293,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
+        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2, true));
         this.goalSelector.addGoal(3, new RaccoonStealFoodGoal(this));
         this.goalSelector.addGoal(4, new RaccoonStashGoal(this));
