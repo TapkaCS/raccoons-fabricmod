@@ -47,11 +47,13 @@ public class RaccoonClimbGoal extends Goal {
     @Override
     public void start() {
         this.climbTicks = 0;
+        this.raccoon.setClimbIntent(true);
     }
 
     @Override
     public void stop() {
         this.climbDirection = null;
+        this.raccoon.setClimbIntent(false);
     }
 
     @Override

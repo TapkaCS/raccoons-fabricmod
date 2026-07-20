@@ -141,6 +141,11 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     // chest's lid animation knows this raccoon counts as an opener (see ContainerUser below).
     private BlockPos openedChestPos;
 
+    // Set by RaccoonClimbGoal while it's deliberately scaling something. The passive climb-assist
+    // in tick() only fires while this is on - a raw horizontalCollision check also triggers on
+    // gang pile-ups at doors/walls, sending the whole crowd up the building.
+    private boolean climbIntent;
+
     public RaccoonEntity(EntityType<? extends RaccoonEntity> entityType, Level level) {
         super(entityType, level);
     }
@@ -246,7 +251,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             Vec3 doorDelta = this.getDeltaMovement();
             this.setDeltaMovement(0, doorDelta.y, 0);
         }
-        boolean onCustomClimbable = !this.isDoorJumping()
+        boolean onCustomClimbable = this.climbIntent && !this.isDoorJumping()
                 && this.horizontalCollision && this.isNextToClimbableBlock();
         this.setClimbing(onCustomClimbable);
         if (onCustomClimbable) {
@@ -384,6 +389,11 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
 
     public void setDoorJumping(boolean doorJumping) {
         this.entityData.set(DATA_DOOR_JUMPING, doorJumping);
+    }
+
+    /** Only {@link com.tapkacs.raccoons.entity.ai.RaccoonClimbGoal} should set this - see the {@code climbIntent} field. */
+    public void setClimbIntent(boolean climbIntent) {
+        this.climbIntent = climbIntent;
     }
 
     /** Purely visual/hitbox-cosmetic "big" variant; picks a different GeckoLib model in {@link com.tapkacs.raccoons.client.entity.RaccoonGeoModel}. */
