@@ -41,7 +41,8 @@ public class RaccoonHatBandGeoLayer extends CustomBoneTextureGeoLayer<RaccoonEnt
 
     @Override
     public void addRenderData(RaccoonEntity animatable, @Nullable Void relatedObject, RaccoonRenderState renderState, float partialTick) {
-        renderState.addGeckolibData(SHOW_HAT, animatable.hasHat() && !animatable.isBaby());
+        // Babies wear hats too - every model carries its own proportionally-scaled hat bones.
+        renderState.addGeckolibData(SHOW_HAT, animatable.hasHat());
         renderState.addGeckolibData(COLLAR_COLOR, animatable.getCollarColor());
     }
 

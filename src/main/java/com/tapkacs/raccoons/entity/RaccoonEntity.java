@@ -472,7 +472,9 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     /**
      * Which coat a raccoon is born with in a given place - each natural color spawns in the
      * biomes it blends into. Snow check comes first so snowy taiga reads as snow, not taiga;
-     * dark forest before the general forest tag for the same reason.
+     * dark forest before the general forest tag for the same reason. The classic gray coat is
+     * the default everywhere else (plains, mountains, rivers, ...) - the old NORMAL texture
+     * was retired and NORMAL now renders as gray too.
      */
     private static ColorVariant pickNaturalVariantFor(Holder<Biome> biome) {
         if (biome.is(BiomeTags.SPAWNS_SNOW_FOXES)) {
@@ -484,16 +486,13 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (biome.is(BiomeTags.IS_BADLANDS) || biome.is(BiomeTags.IS_SAVANNA)) {
             return ColorVariant.NATURAL_TAUPE;
         }
-        if (biome.is(BiomeTags.IS_MOUNTAIN)) {
-            return ColorVariant.NATURAL_GRAY;
-        }
         if (biome.is(Biomes.DARK_FOREST) || biome.is(Biomes.PALE_GARDEN)) {
             return ColorVariant.NATURAL_DARKBROWN;
         }
         if (biome.is(BiomeTags.IS_FOREST)) {
             return ColorVariant.NATURAL_BROWN;
         }
-        return ColorVariant.NORMAL;
+        return ColorVariant.NATURAL_GRAY;
     }
 
     public void setOpenedChestPos(BlockPos pos) {

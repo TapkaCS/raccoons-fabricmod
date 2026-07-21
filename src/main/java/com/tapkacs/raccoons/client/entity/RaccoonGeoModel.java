@@ -36,8 +36,11 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
         this.chunkyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
 
         for (RaccoonEntity.ColorVariant variant : RaccoonEntity.ColorVariant.values()) {
-            String suffix = variant == RaccoonEntity.ColorVariant.NORMAL
-                    ? "" : "_" + variant.name().toLowerCase(Locale.ROOT);
+            // NORMAL's dedicated texture was retired - legacy raccoons saved with it render as the
+            // gray coat, which is also what fresh spawns get as their default (see finalizeSpawn).
+            RaccoonEntity.ColorVariant textureVariant = variant == RaccoonEntity.ColorVariant.NORMAL
+                    ? RaccoonEntity.ColorVariant.NATURAL_GRAY : variant;
+            String suffix = "_" + textureVariant.name().toLowerCase(Locale.ROOT);
             this.adultTextures.put(variant, texture("raccoon" + suffix));
             this.babyTextures.put(variant, texture("raccoon_baby" + suffix));
             this.chunkyTextures.put(variant, texture("raccoon_chunky" + suffix));
