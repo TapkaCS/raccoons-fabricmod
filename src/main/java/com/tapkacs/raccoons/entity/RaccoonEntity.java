@@ -21,6 +21,7 @@ import com.tapkacs.raccoons.sound.ModSounds;
 import com.tapkacs.raccoons.stat.ModStats;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -58,9 +59,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -74,8 +78,11 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         FOLLOW, WANDER, SIT
     }
 
+    // Persisted by ordinal - only ever APPEND new variants, never reorder.
     public enum ColorVariant {
-        NORMAL, ALBINO, MELANISTIC
+        NORMAL, ALBINO, MELANISTIC,
+        NATURAL_BROWN, NATURAL_CHARCOAL, NATURAL_DARKBROWN,
+        NATURAL_GRAY, NATURAL_LIGHTGRAY, NATURAL_TAUPE
     }
 
     private final AnimatableInstanceCache geoCache = new InstancedAnimatableInstanceCache(this);
@@ -343,6 +350,9 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (baby != null) {
             baby.setTame(true, true);
             baby.setOwnerReference(this.getOwnerReference());
+            // Coat is inherited from a random parent (breeding skips finalizeSpawn's biome pick).
+            RaccoonEntity other = mate instanceof RaccoonEntity raccoonMate ? raccoonMate : this;
+            baby.setColorVariant((this.random.nextBoolean() ? this : other).getColorVariant());
         }
         return baby;
     }
@@ -452,9 +462,38 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             this.setColorVariant(ColorVariant.ALBINO);
         } else if (colorRoll < ALBINO_SPAWN_CHANCE + MELANISTIC_SPAWN_CHANCE) {
             this.setColorVariant(ColorVariant.MELANISTIC);
+        } else {
+            this.setColorVariant(pickNaturalVariantFor(level.getBiome(this.blockPosition())));
         }
 
         return result;
+    }
+
+    /**
+     * Which coat a raccoon is born with in a given place - each natural color spawns in the
+     * biomes it blends into. Snow check comes first so snowy taiga reads as snow, not taiga;
+     * dark forest before the general forest tag for the same reason.
+     */
+    private static ColorVariant pickNaturalVariantFor(Holder<Biome> biome) {
+        if (biome.is(BiomeTags.SPAWNS_SNOW_FOXES)) {
+            return ColorVariant.NATURAL_LIGHTGRAY;
+        }
+        if (biome.is(BiomeTags.IS_TAIGA)) {
+            return ColorVariant.NATURAL_CHARCOAL;
+        }
+        if (biome.is(BiomeTags.IS_BADLANDS) || biome.is(BiomeTags.IS_SAVANNA)) {
+            return ColorVariant.NATURAL_TAUPE;
+        }
+        if (biome.is(BiomeTags.IS_MOUNTAIN)) {
+            return ColorVariant.NATURAL_GRAY;
+        }
+        if (biome.is(Biomes.DARK_FOREST) || biome.is(Biomes.PALE_GARDEN)) {
+            return ColorVariant.NATURAL_DARKBROWN;
+        }
+        if (biome.is(BiomeTags.IS_FOREST)) {
+            return ColorVariant.NATURAL_BROWN;
+        }
+        return ColorVariant.NORMAL;
     }
 
     public void setOpenedChestPos(BlockPos pos) {

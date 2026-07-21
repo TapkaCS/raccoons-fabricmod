@@ -7,6 +7,10 @@ import com.tapkacs.raccoons.entity.ModEntityTypes;
 import com.tapkacs.raccoons.entity.RaccoonEntity;
 import net.minecraft.resources.Identifier;
 
+import java.util.EnumMap;
+import java.util.Locale;
+import java.util.Map;
+
 public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     private static final DataTicket<Boolean> CHUNKY = DataTicket.create("raccoons_chunky", Boolean.class);
     private static final DataTicket<RaccoonEntity.ColorVariant> COLOR_VARIANT =
@@ -14,32 +18,34 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     private static final DataTicket<Boolean> BABY = DataTicket.create("raccoons_baby", Boolean.class);
 
     private final Identifier chunkyModelResource;
-    private final Identifier albinoTextureResource;
-    private final Identifier melanisticTextureResource;
     private final Identifier babyModelResource;
-    private final Identifier babyTextureResource;
-    private final Identifier babyAlbinoTextureResource;
-    private final Identifier babyMelanisticTextureResource;
     private final Identifier babyAnimationResource;
     private final Identifier chunkyAnimationResource;
-    private final Identifier chunkyTextureResource;
-    private final Identifier chunkyAlbinoTextureResource;
-    private final Identifier chunkyMelanisticTextureResource;
+
+    // Texture per color variant, one map per body form. Files follow a strict naming scheme:
+    // raccoon[_baby|_chunky][_<variant-lowercase>].png - a new variant only needs enum + textures.
+    private final Map<RaccoonEntity.ColorVariant, Identifier> adultTextures = new EnumMap<>(RaccoonEntity.ColorVariant.class);
+    private final Map<RaccoonEntity.ColorVariant, Identifier> babyTextures = new EnumMap<>(RaccoonEntity.ColorVariant.class);
+    private final Map<RaccoonEntity.ColorVariant, Identifier> chunkyTextures = new EnumMap<>(RaccoonEntity.ColorVariant.class);
 
     public RaccoonGeoModel() {
         super(ModEntityTypes.RACCOON);
         this.chunkyModelResource = buildFormattedModelPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
-        this.albinoTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_albino"));
-        this.melanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_melanistic"));
         this.babyModelResource = buildFormattedModelPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
-        this.babyTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
-        this.babyAlbinoTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby_albino"));
-        this.babyMelanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby_melanistic"));
         this.babyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
         this.chunkyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
-        this.chunkyTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
-        this.chunkyAlbinoTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky_albino"));
-        this.chunkyMelanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky_melanistic"));
+
+        for (RaccoonEntity.ColorVariant variant : RaccoonEntity.ColorVariant.values()) {
+            String suffix = variant == RaccoonEntity.ColorVariant.NORMAL
+                    ? "" : "_" + variant.name().toLowerCase(Locale.ROOT);
+            this.adultTextures.put(variant, texture("raccoon" + suffix));
+            this.babyTextures.put(variant, texture("raccoon_baby" + suffix));
+            this.chunkyTextures.put(variant, texture("raccoon_chunky" + suffix));
+        }
+    }
+
+    private Identifier texture(String name) {
+        return buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", name));
     }
 
     @Override
@@ -63,24 +69,12 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
         RaccoonEntity.ColorVariant variant =
                 renderState.getOrDefaultGeckolibData(COLOR_VARIANT, RaccoonEntity.ColorVariant.NORMAL);
         if (renderState.getOrDefaultGeckolibData(BABY, false)) {
-            return switch (variant) {
-                case ALBINO -> this.babyAlbinoTextureResource;
-                case MELANISTIC -> this.babyMelanisticTextureResource;
-                case NORMAL -> this.babyTextureResource;
-            };
+            return this.babyTextures.get(variant);
         }
         if (renderState.getOrDefaultGeckolibData(CHUNKY, false)) {
-            return switch (variant) {
-                case ALBINO -> this.chunkyAlbinoTextureResource;
-                case MELANISTIC -> this.chunkyMelanisticTextureResource;
-                case NORMAL -> this.chunkyTextureResource;
-            };
+            return this.chunkyTextures.get(variant);
         }
-        return switch (variant) {
-            case ALBINO -> this.albinoTextureResource;
-            case MELANISTIC -> this.melanisticTextureResource;
-            case NORMAL -> super.getTextureResource(renderState);
-        };
+        return this.adultTextures.get(variant);
     }
 
     // Baby and chunky each have their own animation set (delivered inside their bbmodels) tuned

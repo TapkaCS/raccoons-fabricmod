@@ -67,5 +67,11 @@ public class ModEntityTypes {
         BiomeModifications.addSpawn(
                 BiomeSelectors.includeByKey(Biomes.PLAINS, Biomes.SNOWY_PLAINS, Biomes.DESERT, Biomes.SAVANNA),
                 MobCategory.CREATURE, RACCOON, 8, 3, 5);
+
+        // Mountains and badlands, so the gray/taupe coat variants actually occur in the wild
+        // (see RaccoonEntity#pickNaturalVariantFor for the coat-per-biome mapping).
+        BiomeModifications.addSpawn(
+                BiomeSelectors.tag(BiomeTags.IS_MOUNTAIN).or(BiomeSelectors.tag(BiomeTags.IS_BADLANDS)),
+                MobCategory.CREATURE, RACCOON, 8, 2, 4);
     }
 }
