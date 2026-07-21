@@ -1,9 +1,11 @@
 package com.tapkacs.raccoons;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
 import com.tapkacs.raccoons.advancement.ModTriggers;
 import com.tapkacs.raccoons.block.ModBlocks;
+import com.tapkacs.raccoons.command.RaccoonAnimCommand;
 import com.tapkacs.raccoons.entity.ModEntityTypes;
 import com.tapkacs.raccoons.item.ModCreativeTabs;
 import com.tapkacs.raccoons.item.ModItems;
@@ -38,6 +40,8 @@ public class Raccoons implements ModInitializer {
 		ModSounds.registerModSounds();
 		ModTriggers.registerModTriggers();
 		ModStats.registerModStats();
+		CommandRegistrationCallback.EVENT.register(
+				(dispatcher, registryAccess, environment) -> RaccoonAnimCommand.register(dispatcher));
 
 		LOGGER.info("Hello Fabric world!");
 	}
