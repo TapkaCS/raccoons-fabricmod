@@ -624,6 +624,11 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<RaccoonEntity>("movement", 5, state -> {
             RaccoonEntity raccoon = state.animatable();
+            // The Walk branch below drives controller speed from live walk data every frame. Every
+            // other branch must reset it, or the last in-motion value - near zero as the raccoon
+            // halts - lingers and plays them (and the blend into them) in slow motion. That leak was
+            // the "takes forever to actually sit down after walking" bug.
+            state.setControllerSpeed(1.0f);
             if (raccoon.isSleepingPose()) {
                 return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Sleeping"));
             }
@@ -632,7 +637,6 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             }
             if (raccoon.isDoorJumping()) {
                 // Must outrank the isMoving branch - the raccoon is usually mid-path when it stops to work a door.
-                state.setControllerSpeed(1.0f);
                 return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Jumping"));
             }
             if (raccoon.isBegging()) {
@@ -643,10 +647,6 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
                 state.setControllerSpeed(raccoon.walkAnimation.speed(partialTick));
                 return state.setAndContinue(RawAnimation.begin().thenLoop("Walk"));
             }
-            // "Idle" is a 3s clip that replays from its start every time the controller (re)enters this
-            // branch - i.e. every time the raccoon stops walking - so its "sit down" lead-in is what the
-            // user experiences as "takes forever to sit". Play it back much faster.
-            state.setControllerSpeed(2.5f);
             return state.setAndContinue(RawAnimation.begin().thenLoop("Idle"));
         }));
     }

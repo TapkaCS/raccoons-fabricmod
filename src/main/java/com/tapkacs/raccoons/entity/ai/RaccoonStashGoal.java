@@ -2,9 +2,11 @@ package com.tapkacs.raccoons.entity.ai;
 
 import com.tapkacs.raccoons.Raccoons;
 import com.tapkacs.raccoons.block.ModBlocks;
+import com.tapkacs.raccoons.block.RaccoonStashBlock;
 import com.tapkacs.raccoons.block.RaccoonStashBlockEntity;
 import com.tapkacs.raccoons.entity.RaccoonEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -249,11 +251,22 @@ public class RaccoonStashGoal extends Goal {
             return null;
         }
 
-        this.raccoon.level().setBlockAndUpdate(best, ModBlocks.RACCOON_STASH.defaultBlockState());
+        this.raccoon.level().setBlockAndUpdate(best, ModBlocks.RACCOON_STASH.defaultBlockState()
+                .setValue(RaccoonStashBlock.FACING, this.holeFacing(best)));
         if (this.raccoon.level().getBlockEntity(best) instanceof RaccoonStashBlockEntity stash) {
             stash.setLootTable(LOOT_TABLE);
             stash.setLootTableSeed(this.raccoon.getRandom().nextLong());
         }
         return best;
+    }
+
+    /** The gnawed-out hole faces whichever side the raccoon is carving the stash from. */
+    private Direction holeFacing(BlockPos stash) {
+        double dx = this.raccoon.getX() - (stash.getX() + 0.5);
+        double dz = this.raccoon.getZ() - (stash.getZ() + 0.5);
+        if (Math.abs(dx) > Math.abs(dz)) {
+            return dx > 0 ? Direction.EAST : Direction.WEST;
+        }
+        return dz > 0 ? Direction.SOUTH : Direction.NORTH;
     }
 }
