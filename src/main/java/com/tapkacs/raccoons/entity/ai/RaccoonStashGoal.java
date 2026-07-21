@@ -1,6 +1,7 @@
 package com.tapkacs.raccoons.entity.ai;
 
 import com.tapkacs.raccoons.Raccoons;
+import com.tapkacs.raccoons.config.ModConfigManager;
 import com.tapkacs.raccoons.block.ModBlocks;
 import com.tapkacs.raccoons.block.RaccoonStashBlock;
 import com.tapkacs.raccoons.block.RaccoonStashBlockEntity;
@@ -58,10 +59,14 @@ public class RaccoonStashGoal extends Goal {
         if (this.raccoon.level().isClientSide() || this.raccoon.isTame()) {
             return false;
         }
+        var config = ModConfigManager.get().stashing;
+        if (!config.enabled) {
+            return false;
+        }
         if (!this.raccoon.getCarriedItem().isEmpty()) {
             return false;
         }
-        if (this.raccoon.getRandom().nextInt(600) != 0) {
+        if (this.raccoon.getRandom().nextInt(config.stashChance) != 0) {
             return false;
         }
         this.targetItem = this.findGroundItem();

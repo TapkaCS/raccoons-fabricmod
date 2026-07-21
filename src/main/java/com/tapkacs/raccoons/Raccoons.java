@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import com.tapkacs.raccoons.advancement.ModTriggers;
 import com.tapkacs.raccoons.block.ModBlocks;
 import com.tapkacs.raccoons.command.RaccoonAnimCommand;
+import com.tapkacs.raccoons.config.ModConfigManager;
 import com.tapkacs.raccoons.entity.ModEntityTypes;
 import com.tapkacs.raccoons.item.ModCreativeTabs;
 import com.tapkacs.raccoons.item.ModItems;
@@ -30,6 +31,9 @@ public class Raccoons implements ModInitializer {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
+
+		// Load first - registerSpawns() below reads spawn-tuning values from it.
+		ModConfigManager.load();
 
 		ModEntityTypes.registerModEntityTypes();
 		ModEntityTypes.registerAttributes();

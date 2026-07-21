@@ -7,6 +7,8 @@ import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.tapkacs.raccoons.advancement.ModTriggers;
+import com.tapkacs.raccoons.config.ModConfigManager;
+import com.tapkacs.raccoons.config.RaccoonsConfig;
 import com.tapkacs.raccoons.entity.ai.RaccoonBegGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonClimbGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonFollowOwnerGoal;
@@ -111,22 +113,17 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final String CHUNKY_TAG = "Chunky";
-    private static final float CHUNKY_SPAWN_CHANCE = 0.1f;
 
     private static final EntityDataAccessor<Byte> DATA_COLOR_VARIANT =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BYTE);
 
     private static final String COLOR_VARIANT_TAG = "ColorVariant";
-    private static final float ALBINO_SPAWN_CHANCE = 0.02f;
-    private static final float MELANISTIC_SPAWN_CHANCE = 0.02f; // combined 0.04 = 1-in-25 chance of any special coloring
 
     private static final EntityDataAccessor<Boolean> DATA_CLIMBING =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
     private static final double CLIMB_SPEED = 0.15;
 
     private static final String FED_AMOUNT_TAG = "FedAmount";
-    private static final int OVERFEED_THRESHOLD = 32; // half a stack of food -> becomes chunky
-    private static final int TAMED_RACCOONS_ACHIEVEMENT_THRESHOLD = 50;
 
     private static final EntityDataAccessor<Integer> DATA_COLLAR_COLOR =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.INT);
@@ -142,7 +139,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     private int sleepTimer = -1;
 
     // Counts food items fed (heal-only, not taming) since the last chunky conversion; resets
-    // once it crosses OVERFEED_THRESHOLD and flips the raccoon chunky.
+    // once it crosses the configured overfeed threshold and flips the raccoon chunky.
     private int fedAmount = 0;
 
     // Set by RaccoonStealFoodGoal while it's actually rummaging through a chest, so the
@@ -463,12 +460,13 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnReason, @Nullable SpawnGroupData spawnGroupData) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
-        this.setChunky(this.random.nextFloat() < CHUNKY_SPAWN_CHANCE);
+        RaccoonsConfig.Spawning config = ModConfigManager.get().spawning;
+        this.setChunky(this.random.nextFloat() < config.chunkySpawnChance);
 
         float colorRoll = this.random.nextFloat();
-        if (colorRoll < ALBINO_SPAWN_CHANCE) {
+        if (colorRoll < config.albinoSpawnChance) {
             this.setColorVariant(ColorVariant.ALBINO);
-        } else if (colorRoll < ALBINO_SPAWN_CHANCE + MELANISTIC_SPAWN_CHANCE) {
+        } else if (colorRoll < config.albinoSpawnChance + config.melanisticSpawnChance) {
             this.setColorVariant(ColorVariant.MELANISTIC);
         } else {
             this.setColorVariant(pickNaturalVariantFor(level.getBiome(this.blockPosition())));
@@ -632,7 +630,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (this.isChunky()) {
             return;
         }
-        if (++this.fedAmount >= OVERFEED_THRESHOLD) {
+        if (++this.fedAmount >= ModConfigManager.get().behavior.overfeedThreshold) {
             this.fedAmount = 0;
             this.setChunky(true);
             if (player instanceof ServerPlayer serverPlayer) {
@@ -646,7 +644,8 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             return;
         }
         serverPlayer.awardStat(ModStats.TAMED_RACCOONS);
-        if (serverPlayer.getStats().getValue(Stats.CUSTOM.get(ModStats.TAMED_RACCOONS)) >= TAMED_RACCOONS_ACHIEVEMENT_THRESHOLD) {
+        int threshold = ModConfigManager.get().behavior.tamedRaccoonsAchievementThreshold;
+        if (serverPlayer.getStats().getValue(Stats.CUSTOM.get(ModStats.TAMED_RACCOONS)) >= threshold) {
             ModTriggers.TAMED_ENOUGH_RACCOONS.trigger(serverPlayer);
         }
     }

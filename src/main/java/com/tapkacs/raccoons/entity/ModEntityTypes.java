@@ -1,6 +1,8 @@
 package com.tapkacs.raccoons.entity;
 
 import com.tapkacs.raccoons.Raccoons;
+import com.tapkacs.raccoons.config.RaccoonsConfig;
+import com.tapkacs.raccoons.config.ModConfigManager;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.minecraft.core.Registry;
@@ -57,21 +59,26 @@ public class ModEntityTypes {
             throw new RuntimeException("Failed to register raccoon spawn placement", e);
         }
 
-        // Any forest/taiga - their main habitat, spawning in gangs of 3-5.
+        RaccoonsConfig.Spawning config = ModConfigManager.get().spawning;
+
+        // Any forest/taiga - their main habitat, spawning in gangs.
         BiomeModifications.addSpawn(
                 BiomeSelectors.tag(BiomeTags.IS_FOREST).or(BiomeSelectors.tag(BiomeTags.IS_TAIGA)),
-                MobCategory.CREATURE, RACCOON, 20, 3, 5);
+                MobCategory.CREATURE, RACCOON, config.forestTaigaWeight,
+                config.forestTaigaMinGroupSize, config.forestTaigaMaxGroupSize);
 
         // Also the common village biomes (lower weight - they're visitors there, not native), so
         // gangs reliably show up near villages to raid chests at night.
         BiomeModifications.addSpawn(
                 BiomeSelectors.includeByKey(Biomes.PLAINS, Biomes.SNOWY_PLAINS, Biomes.DESERT, Biomes.SAVANNA),
-                MobCategory.CREATURE, RACCOON, 8, 3, 5);
+                MobCategory.CREATURE, RACCOON, config.villageBiomeWeight,
+                config.villageBiomeMinGroupSize, config.villageBiomeMaxGroupSize);
 
         // Mountains and badlands, so the gray/taupe coat variants actually occur in the wild
         // (see RaccoonEntity#pickNaturalVariantFor for the coat-per-biome mapping).
         BiomeModifications.addSpawn(
                 BiomeSelectors.tag(BiomeTags.IS_MOUNTAIN).or(BiomeSelectors.tag(BiomeTags.IS_BADLANDS)),
-                MobCategory.CREATURE, RACCOON, 8, 2, 4);
+                MobCategory.CREATURE, RACCOON, config.mountainBadlandsWeight,
+                config.mountainBadlandsMinGroupSize, config.mountainBadlandsMaxGroupSize);
     }
 }

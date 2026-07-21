@@ -1,6 +1,7 @@
 package com.tapkacs.raccoons.entity.ai;
 
 import com.tapkacs.raccoons.advancement.ModTriggers;
+import com.tapkacs.raccoons.config.ModConfigManager;
 import com.tapkacs.raccoons.entity.RaccoonEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -44,8 +45,6 @@ public class RaccoonStealFoodGoal extends Goal {
 
     private static final int CHEST_SEARCH_RADIUS = 12;
     private static final int WATER_SEARCH_RADIUS = 7;
-    private static final int NORMAL_CHANCE = 400;
-    private static final int NIGHT_GANG_CHANCE = 30;
     private static final double GANG_CHECK_RADIUS = 16.0;
     private static final int GANG_MIN_OTHERS = 1;
     // What a raccoon comes away with after rummaging through a partly-filled composter.
@@ -69,12 +68,16 @@ public class RaccoonStealFoodGoal extends Goal {
         if (this.raccoon.level().isClientSide()) {
             return false;
         }
+        var config = ModConfigManager.get().theft;
+        if (!config.enabled) {
+            return false;
+        }
         // Don't steal a second thing (food, or anything RaccoonStashGoal has it carrying) while already holding something -
         // this goal outranks RaccoonStashGoal and would otherwise interrupt it mid-carry every time the gang-raid roll hits.
         if (!this.raccoon.getCarriedItem().isEmpty()) {
             return false;
         }
-        int chance = this.isNightGangRaid() ? NIGHT_GANG_CHANCE : NORMAL_CHANCE;
+        int chance = this.isNightGangRaid() ? config.nightGangStealChance : config.chestStealChance;
         if (this.raccoon.getRandom().nextInt(chance) != 0) {
             return false;
         }
