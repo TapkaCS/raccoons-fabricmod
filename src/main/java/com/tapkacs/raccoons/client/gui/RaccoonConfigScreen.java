@@ -2,17 +2,15 @@ package com.tapkacs.raccoons.client.gui;
 
 import com.tapkacs.raccoons.config.ModConfigManager;
 import com.tapkacs.raccoons.config.RaccoonsConfig;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
@@ -39,7 +37,6 @@ public class RaccoonConfigScreen extends Screen {
     @Nullable
     private final Screen parent;
     private Category category = Category.THEFT;
-    private final List<LabelEntry> labels = new ArrayList<>();
 
     // Working copy - one field per RaccoonsConfig leaf, so edits on any tab survive switching tabs.
     private boolean theftEnabled;
@@ -61,9 +58,6 @@ public class RaccoonConfigScreen extends Screen {
     private float melanisticSpawnChance;
     private int overfeedThreshold;
     private int tamedRaccoonsAchievementThreshold;
-
-    private record LabelEntry(String text, int x, int y) {
-    }
 
     public RaccoonConfigScreen(@Nullable Screen parent) {
         super(Component.literal("Raccoons Config"));
@@ -93,7 +87,6 @@ public class RaccoonConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        this.labels.clear();
         this.addSidebar();
 
         int y = PANEL_TOP + 8;
@@ -173,7 +166,7 @@ public class RaccoonConfigScreen extends Screen {
     }
 
     private int addIntRow(int y, String label, int initial, int min, int max, IntConsumer onChange) {
-        this.labels.add(new LabelEntry(label, CONTENT_X, y + 6));
+        this.addRenderableWidget(new StringWidget(CONTENT_X, y + 5, LABEL_WIDTH, 12, Component.literal(label), this.font));
         EditBox editBox = new EditBox(this.font, CONTENT_X + LABEL_WIDTH, y, FIELD_WIDTH, 18, Component.empty());
         editBox.setValue(Integer.toString(initial));
         editBox.setResponder(text -> {
@@ -188,7 +181,7 @@ public class RaccoonConfigScreen extends Screen {
     }
 
     private int addFloatRow(int y, String label, float initial, float min, float max, Consumer<Float> onChange) {
-        this.labels.add(new LabelEntry(label, CONTENT_X, y + 6));
+        this.addRenderableWidget(new StringWidget(CONTENT_X, y + 5, LABEL_WIDTH, 12, Component.literal(label), this.font));
         EditBox editBox = new EditBox(this.font, CONTENT_X + LABEL_WIDTH, y, FIELD_WIDTH, 18, Component.empty());
         editBox.setValue(Float.toString(initial));
         editBox.setResponder(text -> {
@@ -234,11 +227,10 @@ public class RaccoonConfigScreen extends Screen {
 
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
 
-        guiGraphics.centeredText(this.font, this.title, this.width / 2, 12, 0xFFFFFF);
-        Font font = this.font;
-        for (LabelEntry entry : this.labels) {
-            guiGraphics.text(font, entry.text(), entry.x(), entry.y(), 0xE0E0E0);
-        }
+        // Color ints here need an explicit alpha byte (0xFFFFFFFF, not 0xFFFFFF) - vanilla's own
+        // screens pass -1 for opaque white; without it the alpha channel is 0 and the text is
+        // fully transparent. This was why every label silently failed to show up.
+        guiGraphics.centeredText(this.font, this.title, this.width / 2, 12, 0xFFFFFFFF);
     }
 
     @Override
