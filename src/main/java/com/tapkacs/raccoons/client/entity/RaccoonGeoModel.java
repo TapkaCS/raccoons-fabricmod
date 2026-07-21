@@ -21,6 +21,7 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     private final Identifier babyAlbinoTextureResource;
     private final Identifier babyMelanisticTextureResource;
     private final Identifier babyAnimationResource;
+    private final Identifier chunkyAnimationResource;
 
     public RaccoonGeoModel() {
         super(ModEntityTypes.RACCOON);
@@ -32,6 +33,7 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
         this.babyAlbinoTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby_albino"));
         this.babyMelanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby_melanistic"));
         this.babyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
+        this.chunkyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
     }
 
     @Override
@@ -54,7 +56,9 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     public Identifier getTextureResource(GeoRenderState renderState) {
         RaccoonEntity.ColorVariant variant =
                 renderState.getOrDefaultGeckolibData(COLOR_VARIANT, RaccoonEntity.ColorVariant.NORMAL);
-        if (renderState.getOrDefaultGeckolibData(BABY, false)) {
+        // Chunky INTERIM: the new chunky model's UVs were painted against the baby texture sheet
+        // (dedicated chunky textures are still being made), so chunky borrows the baby set for now.
+        if (renderState.getOrDefaultGeckolibData(BABY, false) || renderState.getOrDefaultGeckolibData(CHUNKY, false)) {
             return switch (variant) {
                 case ALBINO -> this.babyAlbinoTextureResource;
                 case MELANISTIC -> this.babyMelanisticTextureResource;
@@ -68,12 +72,15 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
         };
     }
 
-    // Babies have their own animation set (delivered inside BABYMODEL.bbmodel) tuned to the
-    // baby model's pivots - the adult clips would bend the smaller bones around wrong points.
+    // Baby and chunky each have their own animation set (delivered inside their bbmodels) tuned
+    // to their model's pivots - the adult clips would bend the resized bones around wrong points.
     @Override
     public Identifier getAnimationResource(RaccoonEntity animatable) {
         if (animatable.isBaby()) {
             return this.babyAnimationResource;
+        }
+        if (animatable.isChunky()) {
+            return this.chunkyAnimationResource;
         }
         return super.getAnimationResource(animatable);
     }
