@@ -18,6 +18,9 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     private final Identifier melanisticTextureResource;
     private final Identifier babyModelResource;
     private final Identifier babyTextureResource;
+    private final Identifier babyAlbinoTextureResource;
+    private final Identifier babyMelanisticTextureResource;
+    private final Identifier babyAnimationResource;
 
     public RaccoonGeoModel() {
         super(ModEntityTypes.RACCOON);
@@ -26,6 +29,9 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
         this.melanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_melanistic"));
         this.babyModelResource = buildFormattedModelPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
         this.babyTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
+        this.babyAlbinoTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby_albino"));
+        this.babyMelanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby_melanistic"));
+        this.babyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
     }
 
     @Override
@@ -46,13 +52,29 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
 
     @Override
     public Identifier getTextureResource(GeoRenderState renderState) {
+        RaccoonEntity.ColorVariant variant =
+                renderState.getOrDefaultGeckolibData(COLOR_VARIANT, RaccoonEntity.ColorVariant.NORMAL);
         if (renderState.getOrDefaultGeckolibData(BABY, false)) {
-            return this.babyTextureResource;
+            return switch (variant) {
+                case ALBINO -> this.babyAlbinoTextureResource;
+                case MELANISTIC -> this.babyMelanisticTextureResource;
+                case NORMAL -> this.babyTextureResource;
+            };
         }
-        return switch (renderState.getOrDefaultGeckolibData(COLOR_VARIANT, RaccoonEntity.ColorVariant.NORMAL)) {
+        return switch (variant) {
             case ALBINO -> this.albinoTextureResource;
             case MELANISTIC -> this.melanisticTextureResource;
             case NORMAL -> super.getTextureResource(renderState);
         };
+    }
+
+    // Babies have their own animation set (delivered inside BABYMODEL.bbmodel) tuned to the
+    // baby model's pivots - the adult clips would bend the smaller bones around wrong points.
+    @Override
+    public Identifier getAnimationResource(RaccoonEntity animatable) {
+        if (animatable.isBaby()) {
+            return this.babyAnimationResource;
+        }
+        return super.getAnimationResource(animatable);
     }
 }
