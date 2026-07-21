@@ -197,7 +197,10 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     }
 
     public BehaviorMode getBehaviorMode() {
-        return BehaviorMode.values()[this.entityData.get(DATA_BEHAVIOR_MODE)];
+        // Guard the ordinal - /summon NBT can inject any byte, which must not crash the game.
+        byte index = this.entityData.get(DATA_BEHAVIOR_MODE);
+        BehaviorMode[] values = BehaviorMode.values();
+        return index >= 0 && index < values.length ? values[index] : BehaviorMode.FOLLOW;
     }
 
     public void setBehaviorMode(BehaviorMode mode) {
@@ -427,7 +430,12 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
 
     /** Purely visual "rare coloring" variant; picks a different texture in {@link com.tapkacs.raccoons.client.entity.RaccoonGeoModel}. */
     public ColorVariant getColorVariant() {
-        return ColorVariant.values()[this.entityData.get(DATA_COLOR_VARIANT)];
+        // Guard the ordinal - /summon NBT can inject any byte, which must not crash the game
+        // (and a bad value would even persist, crashing the world on every rejoin). Out-of-range
+        // reads fall back to NORMAL (the gray coat) and self-heal on the next save.
+        byte index = this.entityData.get(DATA_COLOR_VARIANT);
+        ColorVariant[] values = ColorVariant.values();
+        return index >= 0 && index < values.length ? values[index] : ColorVariant.NORMAL;
     }
 
     public void setColorVariant(ColorVariant variant) {
