@@ -22,6 +22,9 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     private final Identifier babyMelanisticTextureResource;
     private final Identifier babyAnimationResource;
     private final Identifier chunkyAnimationResource;
+    private final Identifier chunkyTextureResource;
+    private final Identifier chunkyAlbinoTextureResource;
+    private final Identifier chunkyMelanisticTextureResource;
 
     public RaccoonGeoModel() {
         super(ModEntityTypes.RACCOON);
@@ -34,6 +37,9 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
         this.babyMelanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby_melanistic"));
         this.babyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
         this.chunkyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
+        this.chunkyTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
+        this.chunkyAlbinoTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky_albino"));
+        this.chunkyMelanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky_melanistic"));
     }
 
     @Override
@@ -56,13 +62,18 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     public Identifier getTextureResource(GeoRenderState renderState) {
         RaccoonEntity.ColorVariant variant =
                 renderState.getOrDefaultGeckolibData(COLOR_VARIANT, RaccoonEntity.ColorVariant.NORMAL);
-        // Chunky INTERIM: the new chunky model's UVs were painted against the baby texture sheet
-        // (dedicated chunky textures are still being made), so chunky borrows the baby set for now.
-        if (renderState.getOrDefaultGeckolibData(BABY, false) || renderState.getOrDefaultGeckolibData(CHUNKY, false)) {
+        if (renderState.getOrDefaultGeckolibData(BABY, false)) {
             return switch (variant) {
                 case ALBINO -> this.babyAlbinoTextureResource;
                 case MELANISTIC -> this.babyMelanisticTextureResource;
                 case NORMAL -> this.babyTextureResource;
+            };
+        }
+        if (renderState.getOrDefaultGeckolibData(CHUNKY, false)) {
+            return switch (variant) {
+                case ALBINO -> this.chunkyAlbinoTextureResource;
+                case MELANISTIC -> this.chunkyMelanisticTextureResource;
+                case NORMAL -> this.chunkyTextureResource;
             };
         }
         return switch (variant) {
