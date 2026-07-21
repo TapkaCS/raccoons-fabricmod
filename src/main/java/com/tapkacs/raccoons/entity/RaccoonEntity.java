@@ -19,6 +19,7 @@ import com.tapkacs.raccoons.entity.ai.RaccoonWanderGoal;
 import com.tapkacs.raccoons.item.ModItems;
 import com.tapkacs.raccoons.sound.ModSounds;
 import com.tapkacs.raccoons.stat.ModStats;
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -232,7 +233,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         }
 
         if (this.sleepTimer < 0) {
-            this.sleepTimer = 100 + this.random.nextInt(401); // 100-500 ticks = 5-25s
+            this.sleepTimer = 10 + this.random.nextInt(21); // 10-30 ticks = 0.5-1.5s
         } else if (this.sleepTimer > 0) {
             this.sleepTimer--;
         } else {
@@ -507,6 +508,9 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
                     this.setBehaviorMode(BehaviorMode.SIT);
                     this.level().broadcastEntityEvent(this, (byte) 7);
                     this.awardTamedRaccoonProgress(player);
+                    if (player instanceof ServerPlayer serverPlayer) {
+                        CriteriaTriggers.TAME_ANIMAL.trigger(serverPlayer, this);
+                    }
                 } else {
                     this.level().broadcastEntityEvent(this, (byte) 6);
                 }
@@ -639,6 +643,10 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
                 state.setControllerSpeed(raccoon.walkAnimation.speed(partialTick));
                 return state.setAndContinue(RawAnimation.begin().thenLoop("Walk"));
             }
+            // "Idle" is a 3s clip that replays from its start every time the controller (re)enters this
+            // branch - i.e. every time the raccoon stops walking - so its "sit down" lead-in is what the
+            // user experiences as "takes forever to sit". Play it back much faster.
+            state.setControllerSpeed(2.5f);
             return state.setAndContinue(RawAnimation.begin().thenLoop("Idle"));
         }));
     }
