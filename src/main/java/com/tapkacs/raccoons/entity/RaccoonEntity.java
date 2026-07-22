@@ -145,6 +145,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     // it's the one that blocks new steal/stash raids and player behavior-mode commands.
     private static final int CRYING_TICKS = 60; // matches the "Cryin" animation's 3s length
     private static final int DEPRESSION_TICKS = 1200; // ~1 minute
+    private static final double CANDY_WITNESS_RADIUS = 32.0; // who gets the "washed candy" achievement
     private static final String MOOD_TIMER_TAG = "MoodTimer";
     private int moodTimer = 0;
 
@@ -472,6 +473,18 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         this.entityData.set(DATA_DEPRESSED, true);
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                 SoundEvents.ITEM_BREAK.value(), this.getSoundSource(), 1.0f, 1.0f);
+
+        // "That Wasn't the Best Idea" - awarded to whoever's around to witness the tragedy: the owner
+        // if this is a tamed raccoon, otherwise the nearest player (a wild raccoon can steal and wash
+        // cotton candy with no owner at all).
+        ServerPlayer witness = this.getOwner() instanceof ServerPlayer owner ? owner : null;
+        if (witness == null) {
+            witness = this.level().getNearestPlayer(this, CANDY_WITNESS_RADIUS) instanceof ServerPlayer nearest
+                    ? nearest : null;
+        }
+        if (witness != null) {
+            ModTriggers.WASHED_CANDY.trigger(witness);
+        }
     }
 
     /** Only {@link com.tapkacs.raccoons.entity.ai.RaccoonClimbGoal} should set this - see the {@code climbIntent} field. */

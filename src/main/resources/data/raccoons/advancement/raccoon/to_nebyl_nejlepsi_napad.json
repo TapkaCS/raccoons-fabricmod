@@ -1,0 +1,17 @@
+{
+	"parent": "raccoons:raccoon/tady_mas_svacinu",
+	"criteria": {
+		"washed_candy": {
+			"trigger": "raccoons:washed_candy"
+		}
+	},
+	"display": {
+		"icon": { "id": "raccoons:candy_cotton" },
+		"title": { "translate": "advancements.raccoons.to_nebyl_nejlepsi_napad.title" },
+		"description": { "translate": "advancements.raccoons.to_nebyl_nejlepsi_napad.description" },
+		"frame": "task",
+		"show_toast": true,
+		"announce_to_chat": true
+	},
+	"requirements": [["washed_candy"]]
+}

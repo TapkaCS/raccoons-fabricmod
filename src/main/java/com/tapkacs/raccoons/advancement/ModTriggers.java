@@ -24,6 +24,7 @@ public class ModTriggers {
     public static final PlayerTrigger EQUIPPED_HAT = register("equipped_hat");
     public static final PlayerTrigger STOLE_GOLDEN_APPLE = register("stole_golden_apple");
     public static final PlayerTrigger CALLED_RACCOON = register("called_raccoon");
+    public static final PlayerTrigger WASHED_CANDY = register("washed_candy");
 
     /**
      * One trigger per color variant (chunky is a separate, orthogonal flag and has no entry here) -
