@@ -8,6 +8,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 
@@ -24,6 +25,14 @@ public class ModItems {
 
     public static final Item RACCOON_STASH = register("raccoon_stash",
             properties -> new BlockItem(ModBlocks.RACCOON_STASH, properties));
+
+    // Light snack (below apple's nutrition) - it's spun sugar, not a meal. Raccoons that steal it
+    // never actually eat it: see RaccoonStealFoodGoal's wash-dissolve handling.
+    public static final Item CANDY_COTTON = register("candy_cotton",
+            properties -> new Item(properties.food(new FoodProperties.Builder()
+                    .nutrition(2)
+                    .saturationModifier(0.3f)
+                    .build())));
 
     private static Item register(String name, Function<Item.Properties, Item> factory) {
         ResourceKey<Item> key = ResourceKey.create(Registries.ITEM,

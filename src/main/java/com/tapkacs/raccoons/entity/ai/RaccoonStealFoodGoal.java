@@ -3,6 +3,7 @@ package com.tapkacs.raccoons.entity.ai;
 import com.tapkacs.raccoons.advancement.ModTriggers;
 import com.tapkacs.raccoons.config.ModConfigManager;
 import com.tapkacs.raccoons.entity.RaccoonEntity;
+import com.tapkacs.raccoons.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ItemParticleOption;
@@ -210,9 +211,28 @@ public class RaccoonStealFoodGoal extends Goal {
         this.raccoon.getLookControl().setLookAt(this.waterPos.getX() + 0.5, this.waterPos.getY(), this.waterPos.getZ() + 0.5);
         if (this.timer-- <= 0) {
             this.raccoon.setWashing(false);
+            // Cotton candy can't survive a wash - it dissolves in the water, breaking the raccoon's
+            // little heart instead of feeding it (see RaccoonEntity#startCandyHeartbreak).
+            if (this.stolenStack.is(ModItems.CANDY_COTTON)) {
+                this.dissolveCandy();
+                return;
+            }
             this.phase = Phase.EAT;
             this.timer = 20;
         }
+    }
+
+    private void dissolveCandy() {
+        if (this.raccoon.level() instanceof ServerLevel serverLevel) {
+            ItemParticleOption particle = new ItemParticleOption(ParticleTypes.ITEM, this.stolenStack.getItem());
+            serverLevel.sendParticles(particle,
+                    this.raccoon.getX(), this.raccoon.getEyeY() - 0.3, this.raccoon.getZ(),
+                    10, 0.15, 0.15, 0.15, 0.02);
+        }
+        this.raccoon.setCarriedItem(ItemStack.EMPTY);
+        this.stolenStack = ItemStack.EMPTY;
+        this.raccoon.startCandyHeartbreak();
+        this.phase = null;
     }
 
     private void tickEat() {

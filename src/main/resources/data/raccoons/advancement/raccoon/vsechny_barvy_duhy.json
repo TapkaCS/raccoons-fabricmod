@@ -1,0 +1,31 @@
+{
+	"parent": "raccoons:raccoon/tady_mas_svacinu",
+	"criteria": {
+		"albino": { "trigger": "raccoons:tamed_color_albino" },
+		"melanistic": { "trigger": "raccoons:tamed_color_melanistic" },
+		"natural_brown": { "trigger": "raccoons:tamed_color_natural_brown" },
+		"natural_charcoal": { "trigger": "raccoons:tamed_color_natural_charcoal" },
+		"natural_darkbrown": { "trigger": "raccoons:tamed_color_natural_darkbrown" },
+		"natural_gray": { "trigger": "raccoons:tamed_color_natural_gray" },
+		"natural_lightgray": { "trigger": "raccoons:tamed_color_natural_lightgray" },
+		"natural_taupe": { "trigger": "raccoons:tamed_color_natural_taupe" }
+	},
+	"display": {
+		"icon": { "id": "raccoons:raccoon_spawn_egg" },
+		"title": { "translate": "advancements.raccoons.vsechny_barvy_duhy.title" },
+		"description": { "translate": "advancements.raccoons.vsechny_barvy_duhy.description" },
+		"frame": "challenge",
+		"show_toast": true,
+		"announce_to_chat": true
+	},
+	"requirements": [
+		["albino"],
+		["melanistic"],
+		["natural_brown"],
+		["natural_charcoal"],
+		["natural_darkbrown"],
+		["natural_gray"],
+		["natural_lightgray"],
+		["natural_taupe"]
+	]
+}

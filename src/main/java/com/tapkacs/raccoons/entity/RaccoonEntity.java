@@ -22,6 +22,7 @@ import com.tapkacs.raccoons.item.ModItems;
 import com.tapkacs.raccoons.sound.ModSounds;
 import com.tapkacs.raccoons.stat.ModStats;
 import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.advancements.criterion.PlayerTrigger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Direction;
@@ -134,6 +135,19 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
     private static final String HAS_HAT_TAG = "HasHat";
 
+    private static final EntityDataAccessor<Boolean> DATA_CRYING =
+            SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_DEPRESSED =
+            SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
+    // Cotton candy dissolves instead of getting washed - see RaccoonStealFoodGoal's wash handling.
+    // moodTimer counts down from CRYING_TICKS + DEPRESSION_TICKS to 0; isCrying() is only true for
+    // the first CRYING_TICKS (the "Cryin" clip's own length), isDepressed() for the whole span -
+    // it's the one that blocks new steal/stash raids and player behavior-mode commands.
+    private static final int CRYING_TICKS = 60; // matches the "Cryin" animation's 3s length
+    private static final int DEPRESSION_TICKS = 1200; // ~1 minute
+    private static final String MOOD_TIMER_TAG = "MoodTimer";
+    private int moodTimer = 0;
+
     // -1 means "not armed yet"; gets rolled to a random 5-25s (100-500 ticks) once the
     // raccoon settles into Sit mode, then counts down to 0 to trigger the sleeping pose.
     private int sleepTimer = -1;
@@ -191,6 +205,8 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         builder.define(DATA_CLIMBING, false);
         builder.define(DATA_COLLAR_COLOR, DEFAULT_COLLAR_COLOR.getId());
         builder.define(DATA_HAS_HAT, false);
+        builder.define(DATA_CRYING, false);
+        builder.define(DATA_DEPRESSED, false);
     }
 
     public BehaviorMode getBehaviorMode() {
@@ -229,6 +245,21 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (this.isDoorJumping()) {
             this.getNavigation().stop();
             this.getMoveControl().setWait();
+        }
+
+        // Cotton-candy heartbreak: cry briefly, then sulk in place for the rest of the ~1-minute
+        // window. Runs for wild and tamed raccoons alike; while it's going the raccoon stays put.
+        if (this.moodTimer > 0) {
+            this.getNavigation().stop();
+            this.getMoveControl().setWait();
+            this.moodTimer--;
+            if (this.isCrying() && this.moodTimer <= DEPRESSION_TICKS) {
+                this.entityData.set(DATA_CRYING, false); // crying clip done, hold the depression pose
+            }
+            if (this.moodTimer == 0) {
+                this.entityData.set(DATA_DEPRESSED, false);
+            }
+            return;
         }
 
         if (!this.isTame() || this.getBehaviorMode() != BehaviorMode.SIT) {
@@ -310,6 +341,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         output.putInt(FED_AMOUNT_TAG, this.fedAmount);
         output.putByte(COLLAR_COLOR_TAG, (byte) this.getCollarColor().getId());
         output.putBoolean(HAS_HAT_TAG, this.hasHat());
+        output.putInt(MOOD_TIMER_TAG, this.moodTimer);
     }
 
     @Override
@@ -321,6 +353,9 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         this.fedAmount = input.getIntOr(FED_AMOUNT_TAG, 0);
         this.entityData.set(DATA_COLLAR_COLOR, (int) input.getByteOr(COLLAR_COLOR_TAG, (byte) DEFAULT_COLLAR_COLOR.getId()));
         this.entityData.set(DATA_HAS_HAT, input.getBooleanOr(HAS_HAT_TAG, false));
+        this.moodTimer = input.getIntOr(MOOD_TIMER_TAG, 0);
+        this.entityData.set(DATA_DEPRESSED, this.moodTimer > 0);
+        this.entityData.set(DATA_CRYING, this.moodTimer > DEPRESSION_TICKS);
     }
 
     @Override
@@ -353,6 +388,10 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             // Coat is inherited from a random parent (breeding skips finalizeSpawn's biome pick).
             RaccoonEntity other = mate instanceof RaccoonEntity raccoonMate ? raccoonMate : this;
             baby.setColorVariant((this.random.nextBoolean() ? this : other).getColorVariant());
+            // A bred baby is tamed on arrival, same as one tamed by hand - counts toward "every color" too.
+            if (this.getOwner() instanceof ServerPlayer serverPlayer) {
+                baby.awardTamedColorProgress(serverPlayer);
+            }
         }
         return baby;
     }
@@ -409,6 +448,30 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
 
     public void setDoorJumping(boolean doorJumping) {
         this.entityData.set(DATA_DOOR_JUMPING, doorJumping);
+    }
+
+    /** The short "Cryin" clip, played only for the first stretch of the mood-timer window. */
+    public boolean isCrying() {
+        return this.entityData.get(DATA_CRYING);
+    }
+
+    /** The "depression" pose, held for the whole ~1-minute mood window (crying included). While
+     *  depressed a tamed raccoon ignores follow/sit/wander commands (see {@link #cycleBehaviorMode}). */
+    public boolean isDepressed() {
+        return this.entityData.get(DATA_DEPRESSED);
+    }
+
+    /**
+     * Kicks off the cotton-candy heartbreak: the raccoon cries, then sinks into a ~1-minute
+     * depression. Called from {@link com.tapkacs.raccoons.entity.ai.RaccoonStealFoodGoal} when it
+     * tries to wash a cotton candy and the candy dissolves in the water instead.
+     */
+    public void startCandyHeartbreak() {
+        this.moodTimer = CRYING_TICKS + DEPRESSION_TICKS;
+        this.entityData.set(DATA_CRYING, true);
+        this.entityData.set(DATA_DEPRESSED, true);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                SoundEvents.ITEM_BREAK.value(), this.getSoundSource(), 1.0f, 1.0f);
     }
 
     /** Only {@link com.tapkacs.raccoons.entity.ai.RaccoonClimbGoal} should set this - see the {@code climbIntent} field. */
@@ -617,6 +680,10 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
 
         if (this.isTame() && this.isOwnedBy(player) && !this.isFood(itemstack)) {
             if (!this.level().isClientSide()) {
+                // Too heartbroken to take orders - the depression window has to run out first.
+                if (this.isDepressed()) {
+                    return InteractionResult.SUCCESS;
+                }
                 this.cycleBehaviorMode(player);
             }
             return InteractionResult.SUCCESS;
@@ -648,6 +715,15 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (serverPlayer.getStats().getValue(Stats.CUSTOM.get(ModStats.TAMED_RACCOONS)) >= threshold) {
             ModTriggers.TAMED_ENOUGH_RACCOONS.trigger(serverPlayer);
         }
+        this.awardTamedColorProgress(serverPlayer);
+    }
+
+    /** Fires the criterion for this raccoon's specific coat - see {@link ModTriggers#TAMED_COLOR_VARIANT}. */
+    private void awardTamedColorProgress(ServerPlayer serverPlayer) {
+        PlayerTrigger colorTrigger = ModTriggers.TAMED_COLOR_VARIANT.get(this.getColorVariant());
+        if (colorTrigger != null) {
+            colorTrigger.trigger(serverPlayer);
+        }
     }
 
     private void cycleBehaviorMode(Player player) {
@@ -674,6 +750,14 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             // halts - lingers and plays them (and the blend into them) in slow motion. That leak was
             // the "takes forever to actually sit down after walking" bug.
             state.setControllerSpeed(1.0f);
+            // Cotton-candy heartbreak outranks everything: cry once, then hold the depression pose
+            // for the rest of the ~1-minute window (see RaccoonEntity#startCandyHeartbreak).
+            if (raccoon.isCrying()) {
+                return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Cryin"));
+            }
+            if (raccoon.isDepressed()) {
+                return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("depression"));
+            }
             if (raccoon.isSleepingPose()) {
                 return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Sleeping"));
             }
