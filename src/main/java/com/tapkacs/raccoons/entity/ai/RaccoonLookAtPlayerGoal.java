@@ -4,7 +4,7 @@ import com.tapkacs.raccoons.entity.RaccoonEntity;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.player.Player;
 
-/** Stops tracking the player once the raccoon has settled into its sleeping pose, so it doesn't keep turning its head mid-nap. */
+/** Stops tracking the player while the raccoon is asleep or moping, so it doesn't keep turning its head mid-nap or mid-sulk. */
 public class RaccoonLookAtPlayerGoal extends LookAtPlayerGoal {
     private final RaccoonEntity raccoon;
 
@@ -15,11 +15,11 @@ public class RaccoonLookAtPlayerGoal extends LookAtPlayerGoal {
 
     @Override
     public boolean canUse() {
-        return !this.raccoon.isSleepingPose() && super.canUse();
+        return !this.raccoon.isSleepingPose() && !this.raccoon.isDepressed() && super.canUse();
     }
 
     @Override
     public boolean canContinueToUse() {
-        return !this.raccoon.isSleepingPose() && super.canContinueToUse();
+        return !this.raccoon.isSleepingPose() && !this.raccoon.isDepressed() && super.canContinueToUse();
     }
 }

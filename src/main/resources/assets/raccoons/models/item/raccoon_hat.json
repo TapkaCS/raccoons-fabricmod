@@ -1,6 +1,95 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "raccoons:item/raccoon_hat"
-  }
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"parent": "builtin/entity",
+	"texture_size": [64, 64],
+	"textures": {
+		"0": "raccoons:item/raccoon_hat",
+		"particle": "raccoons:item/raccoon_hat"
+	},
+	"elements": [
+		{
+			"from": [2, 0, 2],
+			"to": [14, 1, 14],
+			"rotation": {"angle": 0, "axis": "y", "origin": [9, 1.25, 8]},
+			"faces": {
+				"north": {"uv": [1.5, 7.75, 3, 7.875], "texture": "#0"},
+				"east": {"uv": [0, 7.75, 1.5, 7.875], "texture": "#0"},
+				"south": {"uv": [1.75, 7.75, 3.25, 7.875], "texture": "#0"},
+				"west": {"uv": [3, 7.75, 4, 7.875], "texture": "#0"},
+				"up": {"uv": [1.875, 7.75, 1, 6.75], "texture": "#0"},
+				"down": {"uv": [1.875, 6.75, 1, 7.75], "texture": "#0"}
+			}
+		},
+		{
+			"from": [1, 0.01, 4],
+			"to": [15, 0.99, 12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [9, 1.25, 8]},
+			"faces": {
+				"north": {"uv": [1, 7.75, 2.75, 7.875], "texture": "#0"},
+				"east": {"uv": [0, 7.75, 1, 7.875], "texture": "#0"},
+				"south": {"uv": [1.75, 7.75, 3.5, 7.875], "texture": "#0"},
+				"west": {"uv": [2.75, 7.75, 3.75, 7.875], "texture": "#0"},
+				"up": {"uv": [2, 7.75, 1, 6.75], "texture": "#0"},
+				"down": {"uv": [1.875, 6.75, 1, 7.75], "texture": "#0"}
+			}
+		},
+		{
+			"from": [4, 0.01, 1],
+			"to": [12, 0.99, 15],
+			"rotation": {"angle": 0, "axis": "y", "origin": [9, 1.25, 8]},
+			"faces": {
+				"north": {"uv": [1.75, 7.75, 2.75, 7.875], "texture": "#0"},
+				"east": {"uv": [0, 7.75, 1.75, 7.875], "texture": "#0"},
+				"south": {"uv": [2.25, 7.75, 3.25, 7.875], "texture": "#0"},
+				"west": {"uv": [2.75, 7.75, 4, 7.875], "texture": "#0"},
+				"up": {"uv": [2, 7.875, 1, 6.75], "texture": "#0"},
+				"down": {"uv": [2, 6.75, 1, 7.75], "texture": "#0"}
+			}
+		},
+		{
+			"from": [4, 1, 4],
+			"to": [12, 3, 12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [9, 1.25, 8]},
+			"faces": {
+				"north": {"uv": [1, 7.75, 2, 8], "texture": "#0"},
+				"east": {"uv": [0, 7.75, 1, 8], "texture": "#0"},
+				"south": {"uv": [3, 7.75, 4, 8], "texture": "#0"},
+				"west": {"uv": [2, 7.75, 3, 8], "texture": "#0"},
+				"up": {"uv": [2, 7.75, 1, 6.75], "texture": "#0"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [75, 45, 0],
+			"translation": [6.5, -4.25, 0],
+			"scale": [0.375, 0.375, 0.375]
+		},
+		"firstperson_righthand": {
+			"rotation": [0, 45, 0],
+			"scale": [0.4, 0.4, 0.4]
+		},
+		"ground": {
+			"translation": [0, 3, 0],
+			"scale": [0.25, 0.25, 0.25]
+		},
+		"gui": {
+			"rotation": [30, -135, 0],
+			"scale": [0.625, 0.625, 0.625]
+		},
+		"head": {
+			"translation": [0, 7.75, 0],
+			"scale": [1.1, 1.1, 1.1]
+		}
+	},
+	"groups": [
+		{
+			"name": "bone",
+			"origin": [9, 0.875, 8],
+			"scope": 0,
+			"color": 0,
+			"children": [0, 1, 2, 3]
+		}
+	]
 }

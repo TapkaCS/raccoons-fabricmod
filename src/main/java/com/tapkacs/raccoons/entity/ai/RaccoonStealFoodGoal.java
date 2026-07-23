@@ -58,6 +58,10 @@ public class RaccoonStealFoodGoal extends Goal {
     private Phase phase;
     private int timer;
     private ItemStack stolenStack = ItemStack.EMPTY;
+    // Absolute level game-time tick this raccoon may next raid - without it, the same raccoon
+    // could re-roll and start a fresh raid the instant one ends, which reads as running back and
+    // forth for candy/food and stutters the animation controller between states every raid.
+    private long cooldownUntil = 0;
 
     public RaccoonStealFoodGoal(RaccoonEntity raccoon) {
         this.raccoon = raccoon;
@@ -71,6 +75,9 @@ public class RaccoonStealFoodGoal extends Goal {
         }
         var config = ModConfigManager.get().theft;
         if (!config.enabled) {
+            return false;
+        }
+        if (this.raccoon.level().getGameTime() < this.cooldownUntil) {
             return false;
         }
         // Don't steal a second thing (food, or anything RaccoonStashGoal has it carrying) while already holding something -
@@ -120,6 +127,7 @@ public class RaccoonStealFoodGoal extends Goal {
         this.waterPos = null;
         this.phase = null;
         this.stolenStack = ItemStack.EMPTY;
+        this.cooldownUntil = this.raccoon.level().getGameTime() + ModConfigManager.get().theft.raidCooldownTicks;
     }
 
     private void startOpen(BlockEntity blockEntity) {

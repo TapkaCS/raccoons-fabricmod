@@ -144,7 +144,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     // the first CRYING_TICKS (the "Cryin" clip's own length), isDepressed() for the whole span -
     // it's the one that blocks new steal/stash raids and player behavior-mode commands.
     private static final int CRYING_TICKS = 60; // matches the "Cryin" animation's 3s length
-    private static final int DEPRESSION_TICKS = 1200; // ~1 minute
+    private static final int DEPRESSION_TICKS = 400; // 20 seconds
     private static final double CANDY_WITNESS_RADIUS = 32.0; // who gets the "washed candy" achievement
     private static final String MOOD_TIMER_TAG = "MoodTimer";
     private int moodTimer = 0;
@@ -460,6 +460,16 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
      *  depressed a tamed raccoon ignores follow/sit/wander commands (see {@link #cycleBehaviorMode}). */
     public boolean isDepressed() {
         return this.entityData.get(DATA_DEPRESSED);
+    }
+
+    /** Dev/preview hooks for {@code /raccoonanim} - poke the flags directly instead of running the
+     *  real moodTimer countdown, same idea as the existing sleeping/washing/begging setters. */
+    public void setCrying(boolean crying) {
+        this.entityData.set(DATA_CRYING, crying);
+    }
+
+    public void setDepressed(boolean depressed) {
+        this.entityData.set(DATA_DEPRESSED, depressed);
     }
 
     /**

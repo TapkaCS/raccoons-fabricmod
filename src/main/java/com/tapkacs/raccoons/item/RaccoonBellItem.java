@@ -1,14 +1,5 @@
 package com.tapkacs.raccoons.item;
 
-import com.geckolib.animatable.GeoItem;
-import com.geckolib.animatable.client.GeoRenderProvider;
-import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
-import com.geckolib.animation.AnimationController;
-import com.geckolib.animation.RawAnimation;
-import com.geckolib.animation.object.PlayState;
-import com.geckolib.renderer.GeoItemRenderer;
-import com.geckolib.util.GeckoLibUtil;
 import com.tapkacs.raccoons.advancement.ModTriggers;
 import com.tapkacs.raccoons.entity.RaccoonEntity;
 import net.minecraft.ChatFormatting;
@@ -33,18 +24,13 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Bell that calls all of the player's nearby tamed raccoons over when rung (right-click into the air).
- * Sways in hand while walking; both are purely cosmetic GeckoLib animations on the held-item model.
- */
-public class RaccoonBellItem extends Item implements GeoItem {
-    private static final double CALL_RADIUS = 32.0;
+/** Bell that calls all of the player's nearby tamed raccoons over when rung (right-click into the air). Plain flat 2D item. */
+public class RaccoonBellItem extends Item {
 
-    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+    private static final double CALL_RADIUS = 32.0;
 
     public RaccoonBellItem(Properties properties) {
         super(properties);
-        GeoItem.registerSyncedAnimatable(this);
     }
 
     @Override
@@ -76,9 +62,6 @@ public class RaccoonBellItem extends Item implements GeoItem {
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.BELL_BLOCK, SoundSource.PLAYERS, 2.0F, 1.0F);
         }
-        if (player instanceof ServerPlayer) {
-            this.triggerAnim(player, GeoItem.getId(player.getItemInHand(hand)), "bell", "ring");
-        }
         return InteractionResult.SUCCESS;
     }
 
@@ -102,35 +85,5 @@ public class RaccoonBellItem extends Item implements GeoItem {
         super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, flag);
         tooltipAdder.accept(Component.translatable("item.raccoons.raccoon_bell.tooltip.flavor").withStyle(ChatFormatting.GOLD));
         tooltipAdder.accept(Component.translatable("item.raccoons.raccoon_bell.tooltip.hint").withStyle(ChatFormatting.GRAY));
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<RaccoonBellItem>("bell", 5, state -> {
-            if (state.isMoving()) {
-                return state.setAndContinue(RawAnimation.begin().thenLoop("walking"));
-            }
-            return PlayState.STOP;
-        }).triggerableAnim("ring", RawAnimation.begin().thenPlay("ring")));
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
-    }
-
-    @Override
-    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
-        consumer.accept(new GeoRenderProvider() {
-            private GeoItemRenderer<RaccoonBellItem> renderer;
-
-            @Override
-            public GeoItemRenderer<?> getGeoItemRenderer() {
-                if (this.renderer == null) {
-                    this.renderer = new GeoItemRenderer<>(new RaccoonBellItemGeoModel()).withScale(1.1f);
-                }
-                return this.renderer;
-            }
-        });
     }
 }

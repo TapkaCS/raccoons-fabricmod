@@ -11,13 +11,14 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.SpawnEggItem;
 
 import java.util.function.Function;
 
 public class ModItems {
 
     public static final Item RACCOON_SPAWN_EGG = register("raccoon_spawn_egg",
-            properties -> new RaccoonSpawnEggItem(properties.spawnEgg(ModEntityTypes.RACCOON)));
+            properties -> new SpawnEggItem(properties.spawnEgg(ModEntityTypes.RACCOON)));
 
     public static final Item RACCOON_HAT = register("raccoon_hat", RaccoonHatItem::new);
 

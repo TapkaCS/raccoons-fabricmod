@@ -18,6 +18,8 @@ public class RaccoonsConfig {
         public int chestStealChance = 400;
         /** 1-in-N chance while part of a wild nighttime gang (lower = more frequent raiding). */
         public int nightGangStealChance = 30;
+        /** Ticks a raccoon waits after finishing (or abandoning) a raid before it can start another. */
+        public int raidCooldownTicks = 300;
     }
 
     public static class Stashing {

@@ -42,6 +42,7 @@ public class RaccoonConfigScreen extends Screen {
     private boolean theftEnabled;
     private int chestStealChance;
     private int nightGangStealChance;
+    private int raidCooldownTicks;
     private boolean stashingEnabled;
     private int stashChance;
     private int forestTaigaWeight;
@@ -67,6 +68,7 @@ public class RaccoonConfigScreen extends Screen {
         this.theftEnabled = config.theft.enabled;
         this.chestStealChance = config.theft.chestStealChance;
         this.nightGangStealChance = config.theft.nightGangStealChance;
+        this.raidCooldownTicks = config.theft.raidCooldownTicks;
         this.stashingEnabled = config.stashing.enabled;
         this.stashChance = config.stashing.stashChance;
         this.forestTaigaWeight = config.spawning.forestTaigaWeight;
@@ -94,7 +96,8 @@ public class RaccoonConfigScreen extends Screen {
             case THEFT -> {
                 y = this.addCheckboxRow(y, "Enabled", this.theftEnabled, v -> this.theftEnabled = v);
                 y = this.addIntRow(y, "Chest/barrel/composter chance (1 in N)", this.chestStealChance, 1, 100000, v -> this.chestStealChance = v);
-                this.addIntRow(y, "Night gang chance (1 in N)", this.nightGangStealChance, 1, 100000, v -> this.nightGangStealChance = v);
+                y = this.addIntRow(y, "Night gang chance (1 in N)", this.nightGangStealChance, 1, 100000, v -> this.nightGangStealChance = v);
+                this.addIntRow(y, "Cooldown between raids (ticks)", this.raidCooldownTicks, 0, 24000, v -> this.raidCooldownTicks = v);
             }
             case STASHING -> {
                 y = this.addCheckboxRow(y, "Enabled", this.stashingEnabled, v -> this.stashingEnabled = v);
@@ -200,6 +203,7 @@ public class RaccoonConfigScreen extends Screen {
         config.theft.enabled = this.theftEnabled;
         config.theft.chestStealChance = this.chestStealChance;
         config.theft.nightGangStealChance = this.nightGangStealChance;
+        config.theft.raidCooldownTicks = this.raidCooldownTicks;
         config.stashing.enabled = this.stashingEnabled;
         config.stashing.stashChance = this.stashChance;
         config.spawning.forestTaigaWeight = this.forestTaigaWeight;

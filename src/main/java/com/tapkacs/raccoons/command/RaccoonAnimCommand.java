@@ -31,6 +31,8 @@ public final class RaccoonAnimCommand {
                 .then(Commands.literal("washing").executes(ctx -> apply(ctx.getSource(), "washing")))
                 .then(Commands.literal("begging").executes(ctx -> apply(ctx.getSource(), "begging")))
                 .then(Commands.literal("jumping").executes(ctx -> apply(ctx.getSource(), "jumping")))
+                .then(Commands.literal("cryin").executes(ctx -> apply(ctx.getSource(), "cryin")))
+                .then(Commands.literal("depression").executes(ctx -> apply(ctx.getSource(), "depression")))
                 .then(Commands.literal("off").executes(ctx -> apply(ctx.getSource(), "off"))));
     }
 
@@ -50,6 +52,8 @@ public final class RaccoonAnimCommand {
         raccoon.setWashing(false);
         raccoon.setBegging(false);
         raccoon.setDoorJumping(false);
+        raccoon.setCrying(false);
+        raccoon.setDepressed(false);
         raccoon.setNoAi(!anim.equals("off"));
 
         switch (anim) {
@@ -57,6 +61,8 @@ public final class RaccoonAnimCommand {
             case "washing" -> raccoon.setWashing(true);
             case "begging" -> raccoon.setBegging(true);
             case "jumping" -> raccoon.setDoorJumping(true);
+            case "cryin" -> raccoon.setCrying(true);
+            case "depression" -> raccoon.setDepressed(true);
             default -> {
             }
         }
