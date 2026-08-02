@@ -7,17 +7,24 @@ import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.tapkacs.raccoons.advancement.ModTriggers;
+import com.tapkacs.raccoons.config.ModConfigManager;
+import com.tapkacs.raccoons.config.RaccoonsConfig;
 import com.tapkacs.raccoons.entity.ai.RaccoonBegGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonClimbGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonFollowOwnerGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonLookAtPlayerGoal;
+import com.tapkacs.raccoons.entity.ai.RaccoonOpenDoorGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonRandomLookAroundGoal;
+import com.tapkacs.raccoons.entity.ai.RaccoonStashGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonStealFoodGoal;
 import com.tapkacs.raccoons.entity.ai.RaccoonWanderGoal;
 import com.tapkacs.raccoons.item.ModItems;
 import com.tapkacs.raccoons.sound.ModSounds;
 import com.tapkacs.raccoons.stat.ModStats;
+import net.minecraft.advancements.triggers.CriteriaTriggers;
+import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -55,9 +62,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -71,8 +81,11 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         FOLLOW, WANDER, SIT
     }
 
+    // Persisted by ordinal - only ever APPEND new variants, never reorder.
     public enum ColorVariant {
-        NORMAL, ALBINO, MELANISTIC
+        NORMAL, ALBINO, MELANISTIC,
+        NATURAL_BROWN, NATURAL_CHARCOAL, NATURAL_DARKBROWN,
+        NATURAL_GRAY, NATURAL_LIGHTGRAY, NATURAL_TAUPE
     }
 
     private final AnimatableInstanceCache geoCache = new InstancedAnimatableInstanceCache(this);
@@ -94,26 +107,24 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     private static final EntityDataAccessor<Boolean> DATA_WASHING =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
 
+    private static final EntityDataAccessor<Boolean> DATA_DOOR_JUMPING =
+            SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
+
     private static final EntityDataAccessor<Boolean> DATA_CHUNKY =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final String CHUNKY_TAG = "Chunky";
-    private static final float CHUNKY_SPAWN_CHANCE = 0.1f;
 
     private static final EntityDataAccessor<Byte> DATA_COLOR_VARIANT =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BYTE);
 
     private static final String COLOR_VARIANT_TAG = "ColorVariant";
-    private static final float ALBINO_SPAWN_CHANCE = 0.02f;
-    private static final float MELANISTIC_SPAWN_CHANCE = 0.02f; // combined 0.04 = 1-in-25 chance of any special coloring
 
     private static final EntityDataAccessor<Boolean> DATA_CLIMBING =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
     private static final double CLIMB_SPEED = 0.15;
 
     private static final String FED_AMOUNT_TAG = "FedAmount";
-    private static final int OVERFEED_THRESHOLD = 32; // half a stack of food -> becomes chunky
-    private static final int TAMED_RACCOONS_ACHIEVEMENT_THRESHOLD = 50;
 
     private static final EntityDataAccessor<Integer> DATA_COLLAR_COLOR =
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.INT);
@@ -124,27 +135,52 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
     private static final String HAS_HAT_TAG = "HasHat";
 
+    private static final EntityDataAccessor<Boolean> DATA_CRYING =
+            SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_DEPRESSED =
+            SynchedEntityData.defineId(RaccoonEntity.class, EntityDataSerializers.BOOLEAN);
+    // Cotton candy dissolves instead of getting washed - see RaccoonStealFoodGoal's wash handling.
+    // moodTimer counts down from CRYING_TICKS + DEPRESSION_TICKS to 0; isCrying() is only true for
+    // the first CRYING_TICKS (the "Cryin" clip's own length), isDepressed() for the whole span -
+    // it's the one that blocks new steal/stash raids and player behavior-mode commands.
+    private static final int CRYING_TICKS = 60; // matches the "Cryin" animation's 3s length
+    private static final int DEPRESSION_TICKS = 400; // 20 seconds
+    private static final double CANDY_WITNESS_RADIUS = 32.0; // who gets the "washed candy" achievement
+    private static final String MOOD_TIMER_TAG = "MoodTimer";
+    private int moodTimer = 0;
+
     // -1 means "not armed yet"; gets rolled to a random 5-25s (100-500 ticks) once the
     // raccoon settles into Sit mode, then counts down to 0 to trigger the sleeping pose.
     private int sleepTimer = -1;
 
     // Counts food items fed (heal-only, not taming) since the last chunky conversion; resets
-    // once it crosses OVERFEED_THRESHOLD and flips the raccoon chunky.
+    // once it crosses the configured overfeed threshold and flips the raccoon chunky.
     private int fedAmount = 0;
 
     // Set by RaccoonStealFoodGoal while it's actually rummaging through a chest, so the
     // chest's lid animation knows this raccoon counts as an opener (see ContainerUser below).
     private BlockPos openedChestPos;
 
+    // Set by RaccoonClimbGoal while it's deliberately scaling something. The passive climb-assist
+    // in tick() only fires while this is on - a raw horizontalCollision check also triggers on
+    // gang pile-ups at doors/walls, sending the whole crowd up the building.
+    private boolean climbIntent;
+
     public RaccoonEntity(EntityType<? extends RaccoonEntity> entityType, Level level) {
         super(entityType, level);
     }
 
-    /** Lets pathfinding route the raccoon over fences instead of always detouring around them (same flag vanilla foxes/chickens use). */
+    /**
+     * Lets pathfinding route the raccoon over fences instead of always detouring around them (same
+     * flag vanilla foxes/chickens use), and through closed doors - clever paws can open those
+     * (see the {@link RaccoonOpenDoorGoal} in {@link #registerGoals()}), so raids can path into buildings
+     * instead of piling up against the outside wall nearest the chest.
+     */
     @Override
     protected PathNavigation createNavigation(Level level) {
         GroundPathNavigation navigation = new GroundPathNavigation(this, level);
         navigation.setCanWalkOverFences(true);
+        navigation.setCanOpenDoors(true);
         return navigation;
     }
 
@@ -164,15 +200,21 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         builder.define(DATA_BEGGING, false);
         builder.define(DATA_CARRIED_ITEM, ItemStack.EMPTY);
         builder.define(DATA_WASHING, false);
+        builder.define(DATA_DOOR_JUMPING, false);
         builder.define(DATA_CHUNKY, false);
         builder.define(DATA_COLOR_VARIANT, (byte) ColorVariant.NORMAL.ordinal());
         builder.define(DATA_CLIMBING, false);
         builder.define(DATA_COLLAR_COLOR, DEFAULT_COLLAR_COLOR.getId());
         builder.define(DATA_HAS_HAT, false);
+        builder.define(DATA_CRYING, false);
+        builder.define(DATA_DEPRESSED, false);
     }
 
     public BehaviorMode getBehaviorMode() {
-        return BehaviorMode.values()[this.entityData.get(DATA_BEHAVIOR_MODE)];
+        // Guard the ordinal - /summon NBT can inject any byte, which must not crash the game.
+        byte index = this.entityData.get(DATA_BEHAVIOR_MODE);
+        BehaviorMode[] values = BehaviorMode.values();
+        return index >= 0 && index < values.length ? values[index] : BehaviorMode.FOLLOW;
     }
 
     public void setBehaviorMode(BehaviorMode mode) {
@@ -197,6 +239,30 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     protected void customServerAiStep(ServerLevel level) {
         super.customServerAiStep(level);
 
+        // This hook runs after navigation.tick() but before moveControl/jumpControl tick, so it's
+        // the one spot where a door-jumping raccoon can be fully frozen: clearing the path AND
+        // resetting the move control kills both the forward shove into the closed door and the
+        // obstacle auto-jump it would otherwise trigger (the "raccoon bouncing up the door" report).
+        if (this.isDoorJumping()) {
+            this.getNavigation().stop();
+            this.getMoveControl().setWait();
+        }
+
+        // Cotton-candy heartbreak: cry briefly, then sulk in place for the rest of the ~1-minute
+        // window. Runs for wild and tamed raccoons alike; while it's going the raccoon stays put.
+        if (this.moodTimer > 0) {
+            this.getNavigation().stop();
+            this.getMoveControl().setWait();
+            this.moodTimer--;
+            if (this.isCrying() && this.moodTimer <= DEPRESSION_TICKS) {
+                this.entityData.set(DATA_CRYING, false); // crying clip done, hold the depression pose
+            }
+            if (this.moodTimer == 0) {
+                this.entityData.set(DATA_DEPRESSED, false);
+            }
+            return;
+        }
+
         if (!this.isTame() || this.getBehaviorMode() != BehaviorMode.SIT) {
             return;
         }
@@ -206,7 +272,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         }
 
         if (this.sleepTimer < 0) {
-            this.sleepTimer = 100 + this.random.nextInt(401); // 100-500 ticks = 5-25s
+            this.sleepTimer = 10 + this.random.nextInt(21); // 10-30 ticks = 0.5-1.5s
         } else if (this.sleepTimer > 0) {
             this.sleepTimer--;
         } else {
@@ -227,7 +293,15 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (this.level().isClientSide()) {
             return;
         }
-        boolean onCustomClimbable = this.horizontalCollision && this.isNextToClimbableBlock();
+        // Working a door open means deliberately standing against a block: kill the horizontal push
+        // other goals keep applying (and the climb-assist below), or the raccoon slides up/along the
+        // door frame mid jump-animation instead of hopping in place.
+        if (this.isDoorJumping()) {
+            Vec3 doorDelta = this.getDeltaMovement();
+            this.setDeltaMovement(0, doorDelta.y, 0);
+        }
+        boolean onCustomClimbable = this.climbIntent && !this.isDoorJumping()
+                && this.horizontalCollision && this.isNextToClimbableBlock();
         this.setClimbing(onCustomClimbable);
         if (onCustomClimbable) {
             Vec3 delta = this.getDeltaMovement();
@@ -268,6 +342,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         output.putInt(FED_AMOUNT_TAG, this.fedAmount);
         output.putByte(COLLAR_COLOR_TAG, (byte) this.getCollarColor().getId());
         output.putBoolean(HAS_HAT_TAG, this.hasHat());
+        output.putInt(MOOD_TIMER_TAG, this.moodTimer);
     }
 
     @Override
@@ -279,21 +354,26 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         this.fedAmount = input.getIntOr(FED_AMOUNT_TAG, 0);
         this.entityData.set(DATA_COLLAR_COLOR, (int) input.getByteOr(COLLAR_COLOR_TAG, (byte) DEFAULT_COLLAR_COLOR.getId()));
         this.entityData.set(DATA_HAS_HAT, input.getBooleanOr(HAS_HAT_TAG, false));
+        this.moodTimer = input.getIntOr(MOOD_TIMER_TAG, 0);
+        this.entityData.set(DATA_DEPRESSED, this.moodTimer > 0);
+        this.entityData.set(DATA_CRYING, this.moodTimer > DEPRESSION_TICKS);
     }
 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
+        this.goalSelector.addGoal(2, new RaccoonOpenDoorGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2, true));
         this.goalSelector.addGoal(3, new RaccoonStealFoodGoal(this));
-        this.goalSelector.addGoal(4, new RaccoonBegGoal(this, 8.0f));
-        this.goalSelector.addGoal(5, new BreedGoal(this, 1.0));
-        this.goalSelector.addGoal(6, new RaccoonFollowOwnerGoal(this, 1.0, 10.0f, 2.0f));
-        this.goalSelector.addGoal(7, new RaccoonClimbGoal(this));
-        this.goalSelector.addGoal(8, new RaccoonWanderGoal(this, 1.0));
-        this.goalSelector.addGoal(9, new RaccoonLookAtPlayerGoal(this, 6.0f));
-        this.goalSelector.addGoal(10, new RaccoonRandomLookAroundGoal(this));
+        this.goalSelector.addGoal(4, new RaccoonStashGoal(this));
+        this.goalSelector.addGoal(5, new RaccoonBegGoal(this, 8.0f));
+        this.goalSelector.addGoal(6, new BreedGoal(this, 1.0));
+        this.goalSelector.addGoal(7, new RaccoonFollowOwnerGoal(this, 1.0, 10.0f, 2.0f));
+        this.goalSelector.addGoal(8, new RaccoonClimbGoal(this));
+        this.goalSelector.addGoal(9, new RaccoonWanderGoal(this, 1.0));
+        this.goalSelector.addGoal(10, new RaccoonLookAtPlayerGoal(this, 6.0f));
+        this.goalSelector.addGoal(11, new RaccoonRandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
@@ -306,6 +386,13 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (baby != null) {
             baby.setTame(true, true);
             baby.setOwnerReference(this.getOwnerReference());
+            // Coat is inherited from a random parent (breeding skips finalizeSpawn's biome pick).
+            RaccoonEntity other = mate instanceof RaccoonEntity raccoonMate ? raccoonMate : this;
+            baby.setColorVariant((this.random.nextBoolean() ? this : other).getColorVariant());
+            // A bred baby is tamed on arrival, same as one tamed by hand - counts toward "every color" too.
+            if (this.getOwner() instanceof ServerPlayer serverPlayer) {
+                baby.awardTamedColorProgress(serverPlayer);
+            }
         }
         return baby;
     }
@@ -355,6 +442,66 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         this.entityData.set(DATA_WASHING, washing);
     }
 
+    /** Standing-on-hind-legs jump played while working a door open (see {@link com.tapkacs.raccoons.entity.ai.RaccoonOpenDoorGoal}). */
+    public boolean isDoorJumping() {
+        return this.entityData.get(DATA_DOOR_JUMPING);
+    }
+
+    public void setDoorJumping(boolean doorJumping) {
+        this.entityData.set(DATA_DOOR_JUMPING, doorJumping);
+    }
+
+    /** The short "Cryin" clip, played only for the first stretch of the mood-timer window. */
+    public boolean isCrying() {
+        return this.entityData.get(DATA_CRYING);
+    }
+
+    /** The "depression" pose, held for the whole ~1-minute mood window (crying included). While
+     *  depressed a tamed raccoon ignores follow/sit/wander commands (see {@link #cycleBehaviorMode}). */
+    public boolean isDepressed() {
+        return this.entityData.get(DATA_DEPRESSED);
+    }
+
+    /** Dev/preview hooks for {@code /raccoonanim} - poke the flags directly instead of running the
+     *  real moodTimer countdown, same idea as the existing sleeping/washing/begging setters. */
+    public void setCrying(boolean crying) {
+        this.entityData.set(DATA_CRYING, crying);
+    }
+
+    public void setDepressed(boolean depressed) {
+        this.entityData.set(DATA_DEPRESSED, depressed);
+    }
+
+    /**
+     * Kicks off the cotton-candy heartbreak: the raccoon cries, then sinks into a ~1-minute
+     * depression. Called from {@link com.tapkacs.raccoons.entity.ai.RaccoonStealFoodGoal} when it
+     * tries to wash a cotton candy and the candy dissolves in the water instead.
+     */
+    public void startCandyHeartbreak() {
+        this.moodTimer = CRYING_TICKS + DEPRESSION_TICKS;
+        this.entityData.set(DATA_CRYING, true);
+        this.entityData.set(DATA_DEPRESSED, true);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                SoundEvents.ITEM_BREAK.value(), this.getSoundSource(), 1.0f, 1.0f);
+
+        // "That Wasn't the Best Idea" - awarded to whoever's around to witness the tragedy: the owner
+        // if this is a tamed raccoon, otherwise the nearest player (a wild raccoon can steal and wash
+        // cotton candy with no owner at all).
+        ServerPlayer witness = this.getOwner() instanceof ServerPlayer owner ? owner : null;
+        if (witness == null) {
+            witness = this.level().getNearestPlayer(this, CANDY_WITNESS_RADIUS) instanceof ServerPlayer nearest
+                    ? nearest : null;
+        }
+        if (witness != null) {
+            ModTriggers.WASHED_CANDY.trigger(witness);
+        }
+    }
+
+    /** Only {@link com.tapkacs.raccoons.entity.ai.RaccoonClimbGoal} should set this - see the {@code climbIntent} field. */
+    public void setClimbIntent(boolean climbIntent) {
+        this.climbIntent = climbIntent;
+    }
+
     /** Purely visual/hitbox-cosmetic "big" variant; picks a different GeckoLib model in {@link com.tapkacs.raccoons.client.entity.RaccoonGeoModel}. */
     public boolean isChunky() {
         return this.entityData.get(DATA_CHUNKY);
@@ -366,7 +513,12 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
 
     /** Purely visual "rare coloring" variant; picks a different texture in {@link com.tapkacs.raccoons.client.entity.RaccoonGeoModel}. */
     public ColorVariant getColorVariant() {
-        return ColorVariant.values()[this.entityData.get(DATA_COLOR_VARIANT)];
+        // Guard the ordinal - /summon NBT can inject any byte, which must not crash the game
+        // (and a bad value would even persist, crashing the world on every rejoin). Out-of-range
+        // reads fall back to NORMAL (the gray coat) and self-heal on the next save.
+        byte index = this.entityData.get(DATA_COLOR_VARIANT);
+        ColorVariant[] values = ColorVariant.values();
+        return index >= 0 && index < values.length ? values[index] : ColorVariant.NORMAL;
     }
 
     public void setColorVariant(ColorVariant variant) {
@@ -394,16 +546,45 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason spawnReason, @Nullable SpawnGroupData spawnGroupData) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
-        this.setChunky(this.random.nextFloat() < CHUNKY_SPAWN_CHANCE);
+        RaccoonsConfig.Spawning config = ModConfigManager.get().spawning;
+        this.setChunky(this.random.nextFloat() < config.chunkySpawnChance);
 
         float colorRoll = this.random.nextFloat();
-        if (colorRoll < ALBINO_SPAWN_CHANCE) {
+        if (colorRoll < config.albinoSpawnChance) {
             this.setColorVariant(ColorVariant.ALBINO);
-        } else if (colorRoll < ALBINO_SPAWN_CHANCE + MELANISTIC_SPAWN_CHANCE) {
+        } else if (colorRoll < config.albinoSpawnChance + config.melanisticSpawnChance) {
             this.setColorVariant(ColorVariant.MELANISTIC);
+        } else {
+            this.setColorVariant(pickNaturalVariantFor(level.getBiome(this.blockPosition())));
         }
 
         return result;
+    }
+
+    /**
+     * Which coat a raccoon is born with in a given place - each natural color spawns in the
+     * biomes it blends into. Snow check comes first so snowy taiga reads as snow, not taiga;
+     * dark forest before the general forest tag for the same reason. The classic gray coat is
+     * the default everywhere else (plains, mountains, rivers, ...) - the old NORMAL texture
+     * was retired and NORMAL now renders as gray too.
+     */
+    private static ColorVariant pickNaturalVariantFor(Holder<Biome> biome) {
+        if (biome.is(BiomeTags.SPAWNS_SNOW_FOXES)) {
+            return ColorVariant.NATURAL_LIGHTGRAY;
+        }
+        if (biome.is(BiomeTags.IS_TAIGA)) {
+            return ColorVariant.NATURAL_CHARCOAL;
+        }
+        if (biome.is(BiomeTags.IS_BADLANDS) || biome.is(BiomeTags.IS_SAVANNA)) {
+            return ColorVariant.NATURAL_TAUPE;
+        }
+        if (biome.is(Biomes.DARK_FOREST) || biome.is(Biomes.PALE_GARDEN)) {
+            return ColorVariant.NATURAL_DARKBROWN;
+        }
+        if (biome.is(BiomeTags.IS_FOREST)) {
+            return ColorVariant.NATURAL_BROWN;
+        }
+        return ColorVariant.NATURAL_GRAY;
     }
 
     public void setOpenedChestPos(BlockPos pos) {
@@ -457,6 +638,9 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
                     this.setBehaviorMode(BehaviorMode.SIT);
                     this.level().broadcastEntityEvent(this, (byte) 7);
                     this.awardTamedRaccoonProgress(player);
+                    if (player instanceof ServerPlayer serverPlayer) {
+                        CriteriaTriggers.TAME_ANIMAL.trigger(serverPlayer, this);
+                    }
                 } else {
                     this.level().broadcastEntityEvent(this, (byte) 6);
                 }
@@ -519,6 +703,10 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
 
         if (this.isTame() && this.isOwnedBy(player) && !this.isFood(itemstack)) {
             if (!this.level().isClientSide()) {
+                // Too heartbroken to take orders - the depression window has to run out first.
+                if (this.isDepressed()) {
+                    return InteractionResult.SUCCESS;
+                }
                 this.cycleBehaviorMode(player);
             }
             return InteractionResult.SUCCESS;
@@ -532,7 +720,7 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
         if (this.isChunky()) {
             return;
         }
-        if (++this.fedAmount >= OVERFEED_THRESHOLD) {
+        if (++this.fedAmount >= ModConfigManager.get().behavior.overfeedThreshold) {
             this.fedAmount = 0;
             this.setChunky(true);
             if (player instanceof ServerPlayer serverPlayer) {
@@ -546,8 +734,18 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
             return;
         }
         serverPlayer.awardStat(ModStats.TAMED_RACCOONS);
-        if (serverPlayer.getStats().getValue(Stats.CUSTOM.get(ModStats.TAMED_RACCOONS)) >= TAMED_RACCOONS_ACHIEVEMENT_THRESHOLD) {
+        int threshold = ModConfigManager.get().behavior.tamedRaccoonsAchievementThreshold;
+        if (serverPlayer.getStats().getValue(Stats.CUSTOM.get(ModStats.TAMED_RACCOONS)) >= threshold) {
             ModTriggers.TAMED_ENOUGH_RACCOONS.trigger(serverPlayer);
+        }
+        this.awardTamedColorProgress(serverPlayer);
+    }
+
+    /** Fires the criterion for this raccoon's specific coat - see {@link ModTriggers#TAMED_COLOR_VARIANT}. */
+    private void awardTamedColorProgress(ServerPlayer serverPlayer) {
+        PlayerTrigger colorTrigger = ModTriggers.TAMED_COLOR_VARIANT.get(this.getColorVariant());
+        if (colorTrigger != null) {
+            colorTrigger.trigger(serverPlayer);
         }
     }
 
@@ -570,11 +768,28 @@ public class RaccoonEntity extends TamableAnimal implements GeoEntity, Container
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<RaccoonEntity>("movement", 5, state -> {
             RaccoonEntity raccoon = state.animatable();
+            // The Walk branch below drives controller speed from live walk data every frame. Every
+            // other branch must reset it, or the last in-motion value - near zero as the raccoon
+            // halts - lingers and plays them (and the blend into them) in slow motion. That leak was
+            // the "takes forever to actually sit down after walking" bug.
+            state.setControllerSpeed(1.0f);
+            // Cotton-candy heartbreak outranks everything: cry once, then hold the depression pose
+            // for the rest of the ~1-minute window (see RaccoonEntity#startCandyHeartbreak).
+            if (raccoon.isCrying()) {
+                return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Cryin"));
+            }
+            if (raccoon.isDepressed()) {
+                return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("depression"));
+            }
             if (raccoon.isSleepingPose()) {
                 return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Sleeping"));
             }
             if (raccoon.isWashing()) {
                 return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Washing"));
+            }
+            if (raccoon.isDoorJumping()) {
+                // Must outrank the isMoving branch - the raccoon is usually mid-path when it stops to work a door.
+                return state.setAndContinue(RawAnimation.begin().thenPlayAndHold("Jumping"));
             }
             if (raccoon.isBegging()) {
                 return state.setAndContinue(RawAnimation.begin().thenLoop("Begging"));

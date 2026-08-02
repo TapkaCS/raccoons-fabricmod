@@ -32,8 +32,8 @@ public class RaccoonMouthItemGeoLayer extends BlockAndItemGeoLayer<RaccoonEntity
             return List.of();
         }
 
-        return List.of(RenderData.item(MOUTH_BONE, ItemDisplayContext.GROUND,
-                RenderUtil.createRenderStateForItem(stack, this.itemModelResolver, ItemDisplayContext.GROUND, animatable)));
+        return List.of(RenderData.item(MOUTH_BONE, ItemDisplayContext.FIXED,
+                RenderUtil.createRenderStateForItem(stack, this.itemModelResolver, ItemDisplayContext.FIXED, animatable)));
     }
 
     @Override
@@ -50,6 +50,9 @@ public class RaccoonMouthItemGeoLayer extends BlockAndItemGeoLayer<RaccoonEntity
         poseStack.pushPose();
         poseStack.translate(0, 0.06, -0.08);
         poseStack.mulPose(Axis.XP.rotationDegrees(90f));
+        // FIXED context renders at item-frame scale (much larger than the old GROUND context's built-in
+        // shrink) - scale down to roughly what GROUND looked like, but with FIXED's consistent centering.
+        poseStack.scale(0.5f, 0.5f, 0.5f);
         super.submitItemStackRender(poseStack, bone, stackState, displayContext, renderState, renderTasks, packedLight);
         poseStack.popPose();
     }

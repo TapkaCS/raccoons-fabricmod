@@ -8,6 +8,9 @@
   "item.raccoons.raccoon_bell": "Mývalí zvonek",
   "item.raccoons.raccoon_bell.tooltip.flavor": "Zvuk, který mýval pozná i z druhého konce lesa.",
   "item.raccoons.raccoon_bell.tooltip.hint": "Pravým klikem přivoláš své ochočené mývaly.",
+  "block.raccoons.raccoon_stash": "Mývalí skrýš",
+  "container.raccoons.raccoon_stash": "Mývalí skrýš",
+  "item.raccoons.candy_cotton": "Cukrová vata",
   "entity.raccoons.raccoon": "Mýval",
   "entity.raccoons.raccoon.mode.follow": "Následovat",
   "entity.raccoons.raccoon.mode.wander": "Bloumat",
@@ -25,5 +28,9 @@
   "advancements.raccoons.bozska_svacinka.title": "Božská svačinka",
   "advancements.raccoons.bozska_svacinka.description": "Mýval právě ukradl božský jablko a chystá se ho vykoupat. Doufej, že se nerozpustí!",
   "advancements.raccoons.vecere_je_podavana.title": "Večeře je podávána!",
-  "advancements.raccoons.vecere_je_podavana.description": "Naučil jsi je slyšet tvůj zvonek i přes půlku lesa."
+  "advancements.raccoons.vecere_je_podavana.description": "Naučil jsi je slyšet tvůj zvonek i přes půlku lesa.",
+  "advancements.raccoons.vsechny_barvy_duhy.title": "Všechny barvy duhy",
+  "advancements.raccoons.vsechny_barvy_duhy.description": "Ochoč každou barevnou variantu mývala.",
+  "advancements.raccoons.to_nebyl_nejlepsi_napad.title": "To nebyl nejlepší nápad",
+  "advancements.raccoons.to_nebyl_nejlepsi_napad.description": "Mýval se pokusil umýt cukrovou vatu."
 }

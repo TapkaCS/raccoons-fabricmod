@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "raccoons:block/raccoon_stash" },
+    "facing=east": { "model": "raccoons:block/raccoon_stash", "y": 90 },
+    "facing=south": { "model": "raccoons:block/raccoon_stash", "y": 180 },
+    "facing=west": { "model": "raccoons:block/raccoon_stash", "y": 270 }
+  }
+}

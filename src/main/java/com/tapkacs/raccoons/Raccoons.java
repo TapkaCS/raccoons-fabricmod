@@ -1,13 +1,20 @@
 package com.tapkacs.raccoons;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
 import com.tapkacs.raccoons.advancement.ModTriggers;
+import com.tapkacs.raccoons.block.ModBlocks;
+import com.tapkacs.raccoons.command.RaccoonAnimCommand;
+import com.tapkacs.raccoons.command.RaccoonConfigCommand;
+import com.tapkacs.raccoons.config.ModConfigManager;
 import com.tapkacs.raccoons.entity.ModEntityTypes;
 import com.tapkacs.raccoons.item.ModCreativeTabs;
 import com.tapkacs.raccoons.item.ModItems;
+import com.tapkacs.raccoons.network.OpenConfigScreenPayload;
 import com.tapkacs.raccoons.sound.ModSounds;
 import com.tapkacs.raccoons.stat.ModStats;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 
 import net.minecraft.resources.Identifier;
 
@@ -28,14 +35,23 @@ public class Raccoons implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
+		// Load first - registerSpawns() below reads spawn-tuning values from it.
+		ModConfigManager.load();
+
 		ModEntityTypes.registerModEntityTypes();
 		ModEntityTypes.registerAttributes();
 		ModEntityTypes.registerSpawns();
+		ModBlocks.registerModBlocks();
 		ModItems.registerModItems();
 		ModCreativeTabs.registerModCreativeTabs();
 		ModSounds.registerModSounds();
 		ModTriggers.registerModTriggers();
 		ModStats.registerModStats();
+		PayloadTypeRegistry.clientboundPlay().register(OpenConfigScreenPayload.TYPE, OpenConfigScreenPayload.CODEC);
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+			RaccoonAnimCommand.register(dispatcher);
+			RaccoonConfigCommand.register(dispatcher);
+		});
 
 		LOGGER.info("Hello Fabric world!");
 	}

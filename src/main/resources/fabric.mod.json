@@ -3,15 +3,15 @@
 	"id": "raccoons",
 	"version": "${version}",
 	"name": "Raccoons!",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Add mischievous raccoons to your world! Watch your supplies, and make him a little hat!",
 	"authors": [
-		"Me!"
+		"TapkaCS"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/TapkaCS/raccoonmod",
+		"sources": "https://github.com/TapkaCS/raccoonmod"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/raccoons/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -24,7 +24,7 @@
 	},
 	"depends": {
 		"fabricloader": ">=0.19.3",
-		"minecraft": "~26.1.2",
+		"minecraft": "~26.2",
 		"java": ">=25",
 		"fabric-api": "*",
 		"geckolib": ">=5.5.0"

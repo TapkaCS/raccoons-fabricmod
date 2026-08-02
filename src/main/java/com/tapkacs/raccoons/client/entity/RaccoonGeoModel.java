@@ -7,6 +7,10 @@ import com.tapkacs.raccoons.entity.ModEntityTypes;
 import com.tapkacs.raccoons.entity.RaccoonEntity;
 import net.minecraft.resources.Identifier;
 
+import java.util.EnumMap;
+import java.util.Locale;
+import java.util.Map;
+
 public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     private static final DataTicket<Boolean> CHUNKY = DataTicket.create("raccoons_chunky", Boolean.class);
     private static final DataTicket<RaccoonEntity.ColorVariant> COLOR_VARIANT =
@@ -14,18 +18,37 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
     private static final DataTicket<Boolean> BABY = DataTicket.create("raccoons_baby", Boolean.class);
 
     private final Identifier chunkyModelResource;
-    private final Identifier albinoTextureResource;
-    private final Identifier melanisticTextureResource;
     private final Identifier babyModelResource;
-    private final Identifier babyTextureResource;
+    private final Identifier babyAnimationResource;
+    private final Identifier chunkyAnimationResource;
+
+    // Texture per color variant, one map per body form. Files follow a strict naming scheme:
+    // raccoon[_baby|_chunky][_<variant-lowercase>].png - a new variant only needs enum + textures.
+    private final Map<RaccoonEntity.ColorVariant, Identifier> adultTextures = new EnumMap<>(RaccoonEntity.ColorVariant.class);
+    private final Map<RaccoonEntity.ColorVariant, Identifier> babyTextures = new EnumMap<>(RaccoonEntity.ColorVariant.class);
+    private final Map<RaccoonEntity.ColorVariant, Identifier> chunkyTextures = new EnumMap<>(RaccoonEntity.ColorVariant.class);
 
     public RaccoonGeoModel() {
         super(ModEntityTypes.RACCOON);
         this.chunkyModelResource = buildFormattedModelPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
-        this.albinoTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_albino"));
-        this.melanisticTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_melanistic"));
         this.babyModelResource = buildFormattedModelPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
-        this.babyTextureResource = buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
+        this.babyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_baby"));
+        this.chunkyAnimationResource = buildFormattedAnimationPath(Identifier.fromNamespaceAndPath("raccoons", "raccoon_chunky"));
+
+        for (RaccoonEntity.ColorVariant variant : RaccoonEntity.ColorVariant.values()) {
+            // NORMAL's dedicated texture was retired - legacy raccoons saved with it render as the
+            // gray coat, which is also what fresh spawns get as their default (see finalizeSpawn).
+            RaccoonEntity.ColorVariant textureVariant = variant == RaccoonEntity.ColorVariant.NORMAL
+                    ? RaccoonEntity.ColorVariant.NATURAL_GRAY : variant;
+            String suffix = "_" + textureVariant.name().toLowerCase(Locale.ROOT);
+            this.adultTextures.put(variant, texture("raccoon" + suffix));
+            this.babyTextures.put(variant, texture("raccoon_baby" + suffix));
+            this.chunkyTextures.put(variant, texture("raccoon_chunky" + suffix));
+        }
+    }
+
+    private Identifier texture(String name) {
+        return buildFormattedTexturePath(Identifier.fromNamespaceAndPath("raccoons", name));
     }
 
     @Override
@@ -46,13 +69,27 @@ public class RaccoonGeoModel extends DefaultedEntityGeoModel<RaccoonEntity> {
 
     @Override
     public Identifier getTextureResource(GeoRenderState renderState) {
+        RaccoonEntity.ColorVariant variant =
+                renderState.getOrDefaultGeckolibData(COLOR_VARIANT, RaccoonEntity.ColorVariant.NORMAL);
         if (renderState.getOrDefaultGeckolibData(BABY, false)) {
-            return this.babyTextureResource;
+            return this.babyTextures.get(variant);
         }
-        return switch (renderState.getOrDefaultGeckolibData(COLOR_VARIANT, RaccoonEntity.ColorVariant.NORMAL)) {
-            case ALBINO -> this.albinoTextureResource;
-            case MELANISTIC -> this.melanisticTextureResource;
-            case NORMAL -> super.getTextureResource(renderState);
-        };
+        if (renderState.getOrDefaultGeckolibData(CHUNKY, false)) {
+            return this.chunkyTextures.get(variant);
+        }
+        return this.adultTextures.get(variant);
+    }
+
+    // Baby and chunky each have their own animation set (delivered inside their bbmodels) tuned
+    // to their model's pivots - the adult clips would bend the resized bones around wrong points.
+    @Override
+    public Identifier getAnimationResource(RaccoonEntity animatable) {
+        if (animatable.isBaby()) {
+            return this.babyAnimationResource;
+        }
+        if (animatable.isChunky()) {
+            return this.chunkyAnimationResource;
+        }
+        return super.getAnimationResource(animatable);
     }
 }
