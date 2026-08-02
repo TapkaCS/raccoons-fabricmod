@@ -2,7 +2,7 @@ package com.tapkacs.raccoons.advancement;
 
 import com.tapkacs.raccoons.Raccoons;
 import com.tapkacs.raccoons.entity.RaccoonEntity;
-import net.minecraft.advancements.criterion.PlayerTrigger;
+import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;

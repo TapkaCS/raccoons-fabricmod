@@ -8,7 +8,7 @@
 					{
 						"condition": "minecraft:entity_properties",
 						"entity": "this",
-						"predicate": { "type": "raccoons:raccoon" }
+						"predicate": { "entity_type": "raccoons:raccoon" }
 					}
 				]
 			}

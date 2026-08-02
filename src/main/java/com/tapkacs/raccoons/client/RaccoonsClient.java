@@ -14,6 +14,6 @@ public class RaccoonsClient implements ClientModInitializer {
     public void onInitializeClient() {
         EntityRendererRegistry.register(ModEntityTypes.RACCOON, RaccoonRenderer::new);
         ClientPlayNetworking.registerGlobalReceiver(OpenConfigScreenPayload.TYPE,
-                (payload, context) -> context.client().setScreen(new RaccoonConfigScreen(null)));
+                (payload, context) -> context.client().gui.setScreen(new RaccoonConfigScreen(null)));
     }
 }
