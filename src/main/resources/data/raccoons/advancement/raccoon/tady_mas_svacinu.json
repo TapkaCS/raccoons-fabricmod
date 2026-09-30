@@ -4,13 +4,11 @@
 		"tamed_raccoon": {
 			"trigger": "minecraft:tame_animal",
 			"conditions": {
-				"entity": [
-					{
-						"condition": "minecraft:entity_properties",
-						"entity": "this",
-						"predicate": { "type": "raccoons:raccoon" }
-					}
-				]
+				"entity": {
+					"type": "minecraft:entity_properties",
+					"entity": "this",
+					"predicate": { "minecraft:entity_type": "raccoons:raccoon" }
+				}
 			}
 		}
 	},

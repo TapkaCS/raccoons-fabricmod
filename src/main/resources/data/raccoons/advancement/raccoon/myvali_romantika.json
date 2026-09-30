@@ -4,13 +4,11 @@
 		"bred_raccoon": {
 			"trigger": "minecraft:bred_animals",
 			"conditions": {
-				"child": [
-					{
-						"condition": "minecraft:entity_properties",
-						"entity": "this",
-						"predicate": { "type": "raccoons:raccoon" }
-					}
-				]
+				"child": {
+					"type": "minecraft:entity_properties",
+					"entity": "this",
+					"predicate": { "minecraft:entity_type": "raccoons:raccoon" }
+				}
 			}
 		}
 	},

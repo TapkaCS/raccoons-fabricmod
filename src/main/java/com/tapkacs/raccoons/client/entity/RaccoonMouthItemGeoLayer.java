@@ -49,7 +49,7 @@ public class RaccoonMouthItemGeoLayer extends BlockAndItemGeoLayer<RaccoonEntity
     protected void submitItemStackRender(PoseStack poseStack, GeoBone bone, ItemStackRenderState stackState, ItemDisplayContext displayContext, RaccoonRenderState renderState, SubmitNodeCollector renderTasks, int packedLight) {
         poseStack.pushPose();
         poseStack.translate(0, 0.06, -0.08);
-        poseStack.mulPose(Axis.XP.rotationDegrees(90f));
+        poseStack.rotateDegrees(Axis.XP, 90f);
         super.submitItemStackRender(poseStack, bone, stackState, displayContext, renderState, renderTasks, packedLight);
         poseStack.popPose();
     }
